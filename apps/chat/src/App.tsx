@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
 function App() {
@@ -10,15 +9,26 @@ function App() {
   return (
     <>
       <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+        <div className="logo-container">
+          <img
+            className="kura-logo light-logo"
+            src="/kura-logo-light-mode.png"
+            alt="Kura Logo"
+            width="180"
+            height="180"
+          />
+          <img
+            className="kura-logo dark-logo"
+            src="/kura-logo-dark-mode.png"
+            alt="Kura Logo"
+            width="180"
+            height="180"
+          />
         </div>
         <div>
-          <h1>Get started</h1>
+          <h1>Kura</h1>
           <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+            Intent Engine &bull; Guardian AI &bull; DeFi on Sui
           </p>
         </div>
         <button

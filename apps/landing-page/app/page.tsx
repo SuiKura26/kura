@@ -5,14 +5,24 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
+        <div className={styles.logoContainer}>
+          <Image
+            className={`${styles.logo} ${styles.lightLogo}`}
+            src="/kura-logo-light-mode.png"
+            alt="Kura Logo"
+            width={150}
+            height={150}
+            priority
+          />
+          <Image
+            className={`${styles.logo} ${styles.darkLogo}`}
+            src="/kura-logo-dark-mode.png"
+            alt="Kura Logo"
+            width={150}
+            height={150}
+            priority
+          />
+        </div>
         <div className={styles.intro}>
           <h1>To get started, edit the page.tsx file.</h1>
           <p>
