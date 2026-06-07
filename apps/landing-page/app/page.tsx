@@ -60,9 +60,12 @@ export default function Home() {
             <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#faq">FAQ</a>
           </nav>
           <div className="flex gap-4">
-            <button className="hidden md:block px-4 py-2 text-xs font-bold text-text-bright border border-border-accent hover:border-text-bright transition-all bg-transparent rounded-sm cursor-pointer">
+            <a 
+              className="hidden md:block px-4 py-2 text-xs font-bold text-text-bright border border-border-accent hover:border-text-bright transition-all bg-transparent rounded-sm cursor-pointer"
+              href="http://localhost:5173"
+            >
               Launch App
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -436,9 +439,12 @@ export default function Home() {
               DeFi should feel clear before it feels powerful.
             </h2>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <button className="px-12 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm flex items-center justify-center gap-2">
+              <a 
+                href="http://localhost:5173"
+                className="px-12 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm flex items-center justify-center gap-2"
+              >
                 Launch Kura <ArrowRight className="w-4 h-4" />
-              </button>
+              </a>
               <button className="px-12 py-4 border border-border-accent text-text-bright text-xs font-bold hover:bg-card-bg-accent transition-all rounded-sm">
                 Read Architecture
               </button>
