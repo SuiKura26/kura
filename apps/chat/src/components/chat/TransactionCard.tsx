@@ -15,6 +15,7 @@ interface TransactionCardProps {
 
 export function TransactionCard({ data, language }: TransactionCardProps) {
   const [confirmed, setConfirmed] = useState(false);
+  const [isCancelled, setIsCancelled] = useState(false);
   const [executionStep, setExecutionStep] = useState(0); // 0: initial, 1: report, 2: main tx, 3: log, 4: done
   const [txDigest, setTxDigest] = useState("");
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
@@ -190,6 +191,23 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
     }
   };
 
+  if (isCancelled) {
+    return (
+      <div className="w-full max-w-sm rounded-xl border border-red-500/20 bg-card p-4 shadow-sm opacity-60">
+        <div className="flex flex-col items-center justify-center space-y-2 py-2 text-center">
+          <div className="rounded-full bg-red-500/10 p-2">
+            <X className="h-5 w-5 text-red-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-red-500">
+              {language === "id" ? "Transaksi Dibatalkan" : "Transaction Cancelled"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (executionStep === 4) {
     return (
       <div className="w-full max-w-sm rounded-xl border bg-card p-4 shadow-sm animate-in zoom-in-95">
@@ -305,14 +323,18 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
 
       {/* Actions */}
       <div className="p-4 flex gap-3">
-        <button className="flex-1 px-4 py-2 rounded-lg border border-input bg-background hover:bg-accent text-sm font-medium transition-colors">
+        <button 
+          onClick={() => setIsCancelled(true)}
+          disabled={confirmed}
+          className="flex-1 px-4 py-2 rounded-lg border border-input bg-background hover:bg-accent text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {text.cancelBtn}
         </button>
         <button 
           onClick={handleExecute}
           disabled={!canExecute || confirmed}
           className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            !canExecute 
+            !canExecute || confirmed
               ? 'bg-muted text-muted-foreground cursor-not-allowed' 
               : riskLevel === 3 
                 ? 'bg-red-500 text-white hover:bg-red-600'
