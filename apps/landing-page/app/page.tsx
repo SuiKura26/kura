@@ -43,7 +43,6 @@ export default function Home() {
               width={32} 
               height={32} 
             />
-            <span className="text-xl font-bold tracking-tighter text-white font-sans">KURA</span>
           </div>
           <nav className="hidden md:flex gap-8">
             <a className="text-xs font-semibold text-[#8e9192] hover:text-white transition-colors" href="#features">Features</a>
@@ -54,9 +53,6 @@ export default function Home() {
           <div className="flex gap-4">
             <button className="hidden md:block px-4 py-2 text-xs font-bold text-white border border-[#2a2a2a] hover:border-white transition-all bg-transparent rounded-sm cursor-pointer">
               Launch App
-            </button>
-            <button className="px-4 py-2 bg-white text-black text-xs font-bold glow-hover transition-all rounded-sm cursor-pointer">
-              Connect Wallet
             </button>
           </div>
         </div>
