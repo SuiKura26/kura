@@ -76,20 +76,36 @@ For a swap of 100 USDC → SUI with 1.5% slippage and $50K pool liquidity:
 
 export async function analyzeRisk(
   intent: IntentJSON,
-  dryRunResult: DryRunResult
+  dryRunResult: DryRunResult,
+  marketRate?: number
 ): Promise<GuardianReportData> {
   const provider = getProvider();
   const modelId = getModelId();
 
-  // Calculate slippage from dry run data
+  // Calculate slippage explicitly using market rate if available
   const amountIn = intent.amountIn ?? 0;
   const estimatedOutput = dryRunResult.estimatedOutput;
+  
+  let expectedOutput = 0;
+  let calculatedSlippageBps = 0;
+  let calculatedSlippagePct = 0;
+
+  if (marketRate && marketRate > 0) {
+    expectedOutput = amountIn * marketRate;
+    if (expectedOutput > 0) {
+      calculatedSlippagePct = ((expectedOutput - estimatedOutput) / expectedOutput) * 100;
+      calculatedSlippageBps = Math.max(0, Math.round(calculatedSlippagePct * 100)); // 1% = 100 bps
+    }
+  }
 
   const userPrompt = `Analyze this DeFi transaction:
 - Action: ${intent.action}
 - Token In: ${intent.tokenIn ?? "unknown"} (amount: ${amountIn})
 - Token Out: ${intent.tokenOut ?? "unknown"}
-- Estimated Output from Dry Run: ${estimatedOutput}
+${marketRate ? `- Market Rate (CoinGecko): 1 ${intent.tokenIn} = ${marketRate} ${intent.tokenOut}
+- Expected Output at Market Rate: ${expectedOutput} ${intent.tokenOut}
+- Calculated Slippage: ${calculatedSlippagePct.toFixed(2)}% (${calculatedSlippageBps} bps)` : "- Market Rate: Unavailable"}
+- Estimated Output from Dry Run: ${estimatedOutput} ${intent.tokenOut}
 - Gas Used: ${dryRunResult.gasUsed} SUI
 - Dry Run Success: ${dryRunResult.success}
 ${dryRunResult.error ? `- Dry Run Error: ${dryRunResult.error}` : ""}

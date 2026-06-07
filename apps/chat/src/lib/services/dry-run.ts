@@ -72,23 +72,29 @@ export async function dryRunTransaction(
 /**
  * Mock Dry Run — used when real dry run is not available
  * (e.g., no wallet connected, testnet down)
+ * Accepts marketRate from CoinGecko to provide realistic simulation.
  */
 export function mockDryRun(
   action: string,
   tokenIn: string,
   tokenOut: string,
-  amountIn: number
+  amountIn: number,
+  marketRate?: number
 ): DryRunResult {
-  const rates: Record<string, Record<string, number>> = {
+  // Simple mock exchange rates as fallback if marketRate is missing
+  const fallbackRates: Record<string, Record<string, number>> = {
     USDC: { SUI: 0.482, USDT: 1.0, WETH: 0.00031 },
     SUI: { USDC: 2.075, USDT: 2.075, WETH: 0.00064 },
     USDT: { SUI: 0.482, USDC: 1.0 },
   };
 
-  const rate = rates[tokenIn]?.[tokenOut] ?? 1.0;
-  const estimatedOutput = parseFloat((amountIn * rate).toFixed(4));
-  const slippageFactor = 0.985 + Math.random() * 0.02;
-  const adjustedOutput = parseFloat((estimatedOutput * slippageFactor).toFixed(4));
+  const rate = marketRate ?? (fallbackRates[tokenIn]?.[tokenOut] ?? 1.0);
+  const expectedOutput = amountIn * rate;
+  
+  // Add slight randomness to simulate real market execution slippage
+  // E.g., execution price is often slightly worse than pure market rate
+  const slippageFactor = 0.975 + Math.random() * 0.024; // 0.1% to 2.5% slippage
+  const adjustedOutput = parseFloat((expectedOutput * slippageFactor).toFixed(4));
 
   return {
     success: true,

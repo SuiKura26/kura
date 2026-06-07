@@ -4,6 +4,7 @@ import { parseIntent } from "@/lib/agents/intent-parser";
 import { buildPTB } from "@/lib/services/ptb-builder";
 import { mockDryRun } from "@/lib/services/dry-run";
 import { analyzeRisk } from "@/lib/agents/guardian";
+import { fetchTokenPrices, getExchangeRate } from "@/lib/services/price-oracle";
 import type { ChatAPIResponse, TransactionData } from "@/types/chat";
 
 /**
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     const { messages, walletAddress, language } = parseResult.data;
 
-    // 2. Agent 1: Intent Parser
+    // 2. Fetch prices concurrently with Intent Parsing to save time
+    const pricesPromise = fetchTokenPrices();
+    
+    // Agent 1: Intent Parser
     let intent;
     try {
       intent = await parseIntent(messages);
@@ -66,6 +70,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Wait for prices to resolve
+    const prices = await pricesPromise;
+    const marketRate = getExchangeRate(
+      intent.tokenIn ?? "USDC",
+      intent.tokenOut ?? "SUI",
+      prices
+    );
+
     // 4. PTB Builder
     const { steps, humanReadableSummary } = buildPTB(
       intent,
@@ -79,13 +91,15 @@ export async function POST(request: NextRequest) {
       intent.action,
       intent.tokenIn ?? "USDC",
       intent.tokenOut ?? "SUI",
-      intent.amountIn ?? 0
+      intent.amountIn ?? 0,
+      marketRate
     );
 
     // 6. Agent 2: Guardian AI Analysis
     let guardianReport;
     try {
-      guardianReport = await analyzeRisk(intent, dryRunResult);
+      guardianReport = await analyzeRisk(intent, dryRunResult, marketRate);
+
     } catch (error) {
       console.error("Guardian AI error:", error);
       // Fallback guardian report
