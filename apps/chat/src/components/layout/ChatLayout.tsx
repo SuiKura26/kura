@@ -8,12 +8,16 @@ import { Menu } from "lucide-react";
 
 export function ChatLayout() {
   const {
+    sessions,
+    activeSessionId,
     messages,
     loadingStep,
     language,
     toggleLanguage,
     sendMessage,
-    clearChat,
+    createNewSession,
+    switchSession,
+    deleteSession,
     isSidebarOpen,
     setIsSidebarOpen,
   } = useChat();
@@ -23,7 +27,11 @@ export function ChatLayout() {
       <Sidebar
         language={language}
         toggleLanguage={toggleLanguage}
-        onNewChat={clearChat}
+        onNewChat={createNewSession}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        switchSession={switchSession}
+        deleteSession={deleteSession}
         isMobileOpen={isSidebarOpen}
         setIsMobileOpen={setIsSidebarOpen}
       />

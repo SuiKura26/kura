@@ -51,6 +51,7 @@ export interface ChatSession {
   title: string;
   messages: Message[];
   createdAt: number;
+  updatedAt: number;
 }
 
 // ============================================================

@@ -1,9 +1,10 @@
 "use client";
 
-import { MessageSquarePlus, History, Wallet, Languages, Moon, Sun, X } from "lucide-react";
+import { MessageSquarePlus, History, Wallet, Languages, Moon, Sun, X, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { ConnectButton } from "@mysten/dapp-kit";
 import { Language } from "@/hooks/useChat";
+import { ChatSession } from "@/types/chat";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -11,11 +12,15 @@ interface SidebarProps {
   language: Language;
   toggleLanguage: () => void;
   onNewChat: () => void;
+  sessions: ChatSession[];
+  activeSessionId: string | null;
+  switchSession: (id: string) => void;
+  deleteSession: (id: string) => void;
   isMobileOpen: boolean;
   setIsMobileOpen: (open: boolean) => void;
 }
 
-export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, setIsMobileOpen }: SidebarProps) {
+export function Sidebar({ language, toggleLanguage, onNewChat, sessions, activeSessionId, switchSession, deleteSession, isMobileOpen, setIsMobileOpen }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -101,20 +106,40 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
             <span>{text.newChat}</span>
           </button>
 
-          {/* History placeholder */}
+          {/* History */}
           <div className="flex-1 overflow-y-auto">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2 flex items-center">
               <History className="w-3 h-3 mr-2" />
               {text.history}
             </div>
-            {/* Mock history items */}
-            <div className="space-y-1">
-              <button className="w-full text-left p-2 text-sm rounded-md hover:bg-accent truncate text-foreground/80">
-                Swap USDC to SUI
-              </button>
-              <button className="w-full text-left p-2 text-sm rounded-md hover:bg-accent truncate text-foreground/80">
-                Stake SUI
-              </button>
+            <div className="space-y-1 pr-2">
+              {sessions.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic px-2">Belum ada riwayat</div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`group flex items-center justify-between p-2 rounded-md transition-colors cursor-pointer ${
+                      activeSessionId === session.id
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-accent text-foreground/80"
+                    }`}
+                    onClick={() => switchSession(session.id)}
+                  >
+                    <span className="text-sm truncate flex-1">{session.title}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSession(session.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 rounded text-muted-foreground transition-all"
+                      title="Hapus Sesi"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
