@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { 
-  Terminal, 
-  EyeOff, 
-  ShieldAlert, 
-  Shield, 
-  ChevronRight, 
-  CheckCircle2, 
-  Users, 
-  TrendingUp, 
+import {
+  Terminal,
+  EyeOff,
+  ShieldAlert,
+  Shield,
+  ChevronRight,
+  CheckCircle2,
+  Users,
+  TrendingUp,
   Code,
   Zap,
   Lock,
@@ -38,19 +38,19 @@ export default function Home() {
         <div className="flex justify-between items-center h-16 px-6 md:px-16 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
             <>
-              <Image 
-                alt="KURA" 
-                className="h-8 w-8 object-contain hidden dark:block" 
-                src="/kura-logo-dark-mode.png" 
-                width={32} 
-                height={32} 
+              <Image
+                alt="KURA"
+                className="h-8 w-8 object-contain hidden dark:block"
+                src="/kura-logo-dark-mode.png"
+                width={32}
+                height={32}
               />
-              <Image 
-                alt="KURA" 
-                className="h-8 w-8 object-contain block dark:hidden" 
-                src="/kura-logo-light-mode.png" 
-                width={32} 
-                height={32} 
+              <Image
+                alt="KURA"
+                className="h-8 w-8 object-contain block dark:hidden"
+                src="/kura-logo-light-mode.png"
+                width={32}
+                height={32}
               />
             </>
           </div>
@@ -61,7 +61,7 @@ export default function Home() {
             <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#faq">FAQ</a>
           </nav>
           <div className="flex gap-4">
-            <a 
+            <a
               className="hidden md:block px-4 py-2 text-xs font-bold text-text-bright border border-border-accent hover:border-text-bright transition-all bg-transparent rounded-sm cursor-pointer"
               href={chatAppUrl}
             >
@@ -75,10 +75,6 @@ export default function Home() {
         {/* Hero Section */}
         <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 md:px-16 text-center py-20 border-b border-border-base">
           <div className="max-w-4xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 border border-border-accent bg-card-bg-base text-text-muted text-xs font-mono tracking-widest rounded-full">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              SECURED BY SUI NETWORK
-            </div>
             <h1 className="text-4xl md:text-6xl font-bold text-text-bright tracking-tight leading-none mb-6">
               Speak your DeFi intent.<br />Execute with protection.
             </h1>
@@ -245,7 +241,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-text-bright mb-20 tracking-tight">The Execution Cycle.</h2>
             <div className="relative">
               {/* Progress Line */}
-              <div className="hidden md:block absolute top-[24px] left-0 w-full h-[1px] bg-border-accent z-0"></div>
+              <div className="hidden md:block absolute top-[24px] left-[10%] right-[10%] h-[1px] bg-border-accent z-0"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative z-10">
                 {[
@@ -255,17 +251,19 @@ export default function Home() {
                   { step: "04", title: "Guardian Analysis", desc: "Security audit and dry run simulation." },
                   { step: "05", title: "Explicit Confirmation", desc: "Final human approval via zkLogin or wallet." }
                 ].map((item, idx) => (
-                  <div key={idx} className="group cursor-pointer" onClick={() => setActiveStep(idx)}>
-                    <div className={`w-12 h-12 border flex items-center justify-center font-mono text-xs mb-6 rounded-sm transition-all duration-300 ${
-                      activeStep === idx 
-                        ? "bg-text-bright text-bg-base border-text-bright shadow-[0_0_15px_rgba(12,10,9,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
+                  <div 
+                    key={idx} 
+                    className="group cursor-pointer flex flex-col items-center text-center" 
+                    onClick={() => setActiveStep(idx)}
+                  >
+                    <div className={`w-12 h-12 border flex items-center justify-center font-mono text-xs mb-6 rounded-sm transition-all duration-300 relative z-10 ${activeStep === idx
+                        ? "bg-text-bright text-bg-base border-text-bright shadow-[0_0_15px_rgba(12,10,9,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)]"
                         : "bg-card-bg-base text-text-muted border-border-accent group-hover:border-text-bright"
-                    }`}>
+                      }`}>
                       {item.step}
                     </div>
-                    <h4 className={`text-xs font-mono font-bold mb-2 transition-colors duration-300 ${
-                      activeStep === idx ? "text-text-bright" : "text-text-muted"
-                    }`}>
+                    <h4 className={`text-xs font-mono font-bold mb-2 transition-colors duration-300 ${activeStep === idx ? "text-text-bright" : "text-text-muted"
+                      }`}>
                       {item.title}
                     </h4>
                     <p className="text-xs text-text-muted leading-relaxed">{item.desc}</p>
@@ -365,7 +363,7 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            
+
             {/* Visual element on the right */}
             <div className="flex-1 w-full max-w-md aspect-square border border-border-base p-12 flex items-center justify-center relative overflow-hidden bg-card-bg-base rounded-sm">
               <div className="absolute inset-0 opacity-5 flex flex-wrap gap-1 p-2">
@@ -440,7 +438,7 @@ export default function Home() {
               DeFi should feel clear before it feels powerful.
             </h2>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <a 
+              <a
                 href={chatAppUrl}
                 className="px-12 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm flex items-center justify-center gap-2"
               >
@@ -460,22 +458,21 @@ export default function Home() {
           <div className="space-y-6">
             <div className="flex items-center gap-2">
               <>
-                <Image 
-                  alt="KURA" 
-                  className="h-8 w-8 object-contain hidden dark:block" 
-                  src="/kura-logo-dark-mode.png" 
-                  width={32} 
-                  height={32} 
+                <Image
+                  alt="KURA"
+                  className="h-8 w-8 object-contain hidden dark:block"
+                  src="/kura-logo-dark-mode.png"
+                  width={32}
+                  height={32}
                 />
-                <Image 
-                  alt="KURA" 
-                  className="h-8 w-8 object-contain block dark:hidden" 
-                  src="/kura-logo-light-mode.png" 
-                  width={32} 
-                  height={32} 
+                <Image
+                  alt="KURA"
+                  className="h-8 w-8 object-contain block dark:hidden"
+                  src="/kura-logo-light-mode.png"
+                  width={32}
+                  height={32}
                 />
               </>
-              <span className="text-lg font-bold text-text-bright tracking-tighter">KURA</span>
             </div>
             <p className="max-w-sm leading-relaxed">
               Built for safer DeFi interactions on Sui. Secured by machine intelligence, confirmed by you.
