@@ -24,6 +24,19 @@ export function useChat() {
   // Flag to know when client-side has hydrated
   const [isReady, setIsReady] = useState(false);
 
+  const createNewSession = useCallback(() => {
+    const newId = generateSessionId();
+    const newSession: ChatSession = {
+      id: newId,
+      title: "New Chat",
+      messages: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    setSessions((prev) => [newSession, ...prev]);
+    setActiveSessionId(newId);
+  }, []);
+
   // Load from local storage on mount
   useEffect(() => {
     try {
@@ -53,30 +66,23 @@ export function useChat() {
     }
   }, [sessions, isReady]);
 
-  // Clear local storage and sessions on wallet disconnect
+  // Handle wallet connect/disconnect
   useEffect(() => {
-    if (isReady && !account) {
+    if (!isReady) return;
+
+    if (!account) {
+      // On disconnect: clear storage and sessions
       localStorage.removeItem(STORAGE_KEY);
       setSessions([]);
       setActiveSessionId(null);
+    } else if (sessions.length === 0) {
+      // On connect (or if no sessions exist): create a new empty session
+      createNewSession();
     }
-  }, [account, isReady]);
+  }, [account, isReady, sessions.length, createNewSession]);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || null;
   const messages = activeSession?.messages || [];
-
-  const createNewSession = useCallback(() => {
-    const newId = generateSessionId();
-    const newSession: ChatSession = {
-      id: newId,
-      title: "New Chat",
-      messages: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    setSessions((prev) => [newSession, ...prev]);
-    setActiveSessionId(newId);
-  }, []);
 
   const switchSession = useCallback((id: string) => {
     setActiveSessionId(id);
