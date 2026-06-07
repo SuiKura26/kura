@@ -5,7 +5,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Message, ChatAPIResponse, ChatSession } from "../types/chat";
 
 export type Language = "id" | "en";
-export type LoadingStep = "parsing" | "simulating" | "guardian" | null;
+export type LoadingStep = "parsing" | "building" | "simulating" | "guardian" | null;
 
 const STORAGE_KEY = "kura_chat_sessions";
 
@@ -185,20 +185,48 @@ export function useChat() {
           throw new Error(`API error: ${response.status}`);
         }
 
-        const data: ChatAPIResponse = await response.json();
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No response body");
 
-        setLoadingStep(null);
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-        // Add AI response
-        const aiMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: data.role,
-          content: data.content,
-          timestamp: Date.now() + 1,
-          type: data.type,
-          transactionData: data.transactionData,
-        };
-        addMessage(aiMsg);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+
+          for (const part of parts) {
+            const lines = part.split("\n");
+            const eventLine = lines.find((l) => l.startsWith("event: "));
+            const dataLine = lines.find((l) => l.startsWith("data: "));
+
+            if (eventLine && dataLine) {
+              const eventType = eventLine.replace("event: ", "").trim();
+              const rawData = dataLine.replace("data: ", "").trim();
+              const parsedData = JSON.parse(rawData);
+
+              if (eventType === "step") {
+                setLoadingStep(parsedData as LoadingStep);
+              } else if (eventType === "result") {
+                setLoadingStep(null);
+                const data = parsedData as ChatAPIResponse;
+                const aiMsg: Message = {
+                  id: (Date.now() + 1).toString(),
+                  role: data.role,
+                  content: data.content,
+                  timestamp: Date.now() + 1,
+                  type: data.type,
+                  transactionData: data.transactionData,
+                };
+                addMessage(aiMsg);
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error("Chat API error:", error);
         setLoadingStep(null);

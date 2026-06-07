@@ -18,20 +18,29 @@ import type { ChatAPIResponse, TransactionData } from "@/types/chat";
 process.env.AI_SDK_LOG_WARNINGS = "false";
 
 export async function POST(request: NextRequest) {
-  try {
+  const body = await request.json();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const sendEvent = (event: string, data: any) => {
+        controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      };
+
+      const sendResultAndClose = (data: ChatAPIResponse) => {
+        sendEvent("result", data);
+        controller.close();
+      };
+
+      try {
     // 1. Parse and validate request body
-    const body = await request.json();
     const parseResult = chatRequestSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: "Request tidak valid. Pastikan format pesan sudah benar.",
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 400 }
-      );
+        } );
     }
 
     const { messages, walletAddress, language } = parseResult.data;
@@ -40,53 +49,45 @@ export async function POST(request: NextRequest) {
     const senderAddress = walletAddress || process.env.TESTNET_WALLET_ADDRESS;
 
     if (!senderAddress) {
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: language === "en" 
             ? "Please connect your wallet first to execute transactions." 
             : "Harap hubungkan dompet Anda terlebih dahulu untuk mengeksekusi transaksi.",
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     // 2. Fetch prices concurrently with Intent Parsing to save time
     const pricesPromise = fetchTokenPrices();
     
     // Agent 1: Intent Parser
+    sendEvent("step", "parsing");
     let intent;
     try {
       intent = await parseIntent(messages);
       console.log("=== DEBUG: Parsed Intent ===", JSON.stringify(intent, null, 2));
     } catch (error) {
       console.error("Intent Parser error:", error);
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content:
             language === "en"
               ? "Sorry, I couldn't understand your request. Please try rephrasing your command, for example: 'Swap 100 USDC to SUI'."
               : "Maaf, saya tidak bisa memahami permintaan Anda. Coba ulangi perintah Anda, contoh: 'Tukar 100 USDC ke SUI'.",
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     // 3. Handle clarification requests
     if (intent.action === "clarify") {
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: intent.reason || (language === "en"
             ? "Could you clarify what you'd like to do? For example: 'Swap 100 USDC to SUI'."
             : "Bisa tolong perjelas apa yang ingin Anda lakukan? Contoh: 'Tukar 100 USDC ke SUI'."),
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     // Wait for prices to resolve
@@ -100,16 +101,13 @@ export async function POST(request: NextRequest) {
     // 3a. Handle check_price
     if (intent.action === "check_price") {
       const rate = getExchangeRate(tokenIn, "USDC", prices);
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: language === "en"
             ? `The current price of ${tokenIn} is approximately $${rate.toFixed(4)} USD.`
             : `Harga ${tokenIn} saat ini adalah sekitar $${rate.toFixed(4)} USD.`,
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     // 3b. Handle check_balance
@@ -119,42 +117,33 @@ export async function POST(request: NextRequest) {
         const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
 
         if (!coinInfo) {
-          return NextResponse.json(
-            {
+          return sendResultAndClose({
               role: "assistant",
               content: language === "en"
                 ? `You don't have any ${tokenIn} in your wallet.`
                 : `Anda tidak memiliki saldo ${tokenIn} di dompet Anda.`,
               type: "text",
-            } satisfies ChatAPIResponse,
-            { status: 200 }
-          );
+            } );
         }
 
         const totalBalance = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
         
-        return NextResponse.json(
-          {
+        return sendResultAndClose({
             role: "assistant",
             content: language === "en"
               ? `Your current ${tokenIn} balance is ${totalBalance.toFixed(4)} ${tokenIn}.`
               : `Saldo ${tokenIn} Anda saat ini adalah ${totalBalance.toFixed(4)} ${tokenIn}.`,
             type: "text",
-          } satisfies ChatAPIResponse,
-          { status: 200 }
-        );
+          } );
       } catch (e) {
         console.error("Balance fetch error:", e);
-        return NextResponse.json(
-          {
+        return sendResultAndClose({
             role: "assistant",
             content: language === "en"
               ? "Sorry, I couldn't fetch your balance right now."
               : "Maaf, saya tidak bisa mengambil data saldo Anda saat ini.",
             type: "text",
-          } satisfies ChatAPIResponse,
-          { status: 200 }
-        );
+          } );
       }
     }
 
@@ -163,16 +152,13 @@ export async function POST(request: NextRequest) {
     const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
 
     if (!coinInfo) {
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: language === "en"
             ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
             : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     const amountInRaw = intent.amountIn ?? 0;
@@ -180,21 +166,19 @@ export async function POST(request: NextRequest) {
 
     if (amountInBaseUnits > coinInfo.totalBalanceBase) {
       const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
-      return NextResponse.json(
-        {
+      return sendResultAndClose({
           role: "assistant",
           content: language === "en"
             ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
             : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
           type: "text",
-        } satisfies ChatAPIResponse,
-        { status: 200 }
-      );
+        } );
     }
 
     const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
 
     // 5. PTB Builder
+    sendEvent("step", "building");
     const { transaction, steps, humanReadableSummary } = await buildPTB(
       intent,
       senderAddress,
@@ -204,9 +188,11 @@ export async function POST(request: NextRequest) {
     );
 
     // 5. REAL Dry Run Simulation (on-chain via RPC)
+    sendEvent("step", "simulating");
     const dryRunResult = await dryRunTransaction(transaction, senderAddress);
 
     // 6. Agent 2: Guardian AI Analysis
+    sendEvent("step", "guardian");
     let guardianReport;
     try {
       guardianReport = await analyzeRisk(intent, dryRunResult, marketRate);
@@ -279,25 +265,28 @@ export async function POST(request: NextRequest) {
         ? `Here are your transaction details for: ${humanReadableSummary}. Please review the Guardian risk report before executing.`
         : `Berikut rincian transaksi Anda untuk: ${humanReadableSummary}. Harap tinjau laporan risiko Guardian sebelum mengeksekusi.`;
 
-    return NextResponse.json(
-      {
+    return sendResultAndClose({
         role: "assistant",
         content: responseContent,
         type: "transaction",
         transactionData,
-      } satisfies ChatAPIResponse,
-      { status: 200 }
-    );
+      } );
   } catch (error) {
     console.error("API /chat error:", error);
-    return NextResponse.json(
-      {
-        role: "assistant",
-        content:
-          "Terjadi kesalahan internal. Silakan coba lagi dalam beberapa saat.",
-        type: "text",
-      } satisfies ChatAPIResponse,
-      { status: 500 }
-    );
+    sendResultAndClose({
+      role: "assistant",
+      content: "Terjadi kesalahan internal. Silakan coba lagi dalam beberapa saat.",
+      type: "text",
+    });
   }
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
 }
