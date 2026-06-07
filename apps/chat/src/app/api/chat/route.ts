@@ -86,11 +86,60 @@ export async function POST(request: NextRequest) {
 
     // Wait for prices to resolve
     const prices = await pricesPromise;
-    const marketRate = getExchangeRate(
-      intent.tokenIn ?? "USDC",
-      intent.tokenOut ?? "SUI",
-      prices
-    );
+    const tokenIn = intent.tokenIn ?? "USDC";
+    const tokenOut = intent.tokenOut ?? "SUI";
+    
+    // 3a. Handle check_price
+    if (intent.action === "check_price") {
+      const rate = getExchangeRate(tokenIn, "USDC", prices);
+      return NextResponse.json(
+        {
+          role: "assistant",
+          content: language === "en"
+            ? `The current price of ${tokenIn} is approximately $${rate.toFixed(4)} USD.`
+            : `Harga ${tokenIn} saat ini adalah sekitar $${rate.toFixed(4)} USD.`,
+          type: "text",
+        } satisfies ChatAPIResponse,
+        { status: 200 }
+      );
+    }
+
+    // 3b. Handle check_balance
+    if (intent.action === "check_balance") {
+      try {
+        const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
+        const client = new SuiJsonRpcClient({ url: "https://fullnode.testnet.sui.io:443", network: "testnet" as any });
+        const coins = await client.getCoins({ owner: senderAddress });
+        // Simplified balance calculation (assuming SUI for MVP)
+        const totalBalanceMist = coins.data.reduce((acc: bigint, coin: any) => acc + BigInt(coin.balance), BigInt(0));
+        const totalBalanceSui = Number(totalBalanceMist) / 1_000_000_000;
+        
+        return NextResponse.json(
+          {
+            role: "assistant",
+            content: language === "en"
+              ? `Your current SUI balance is ${totalBalanceSui.toFixed(4)} SUI.`
+              : `Saldo SUI Anda saat ini adalah ${totalBalanceSui.toFixed(4)} SUI.`,
+            type: "text",
+          } satisfies ChatAPIResponse,
+          { status: 200 }
+        );
+      } catch (e) {
+        console.error("Balance fetch error:", e);
+        return NextResponse.json(
+          {
+            role: "assistant",
+            content: language === "en"
+              ? "Sorry, I couldn't fetch your balance right now."
+              : "Maaf, saya tidak bisa mengambil data saldo Anda saat ini.",
+            type: "text",
+          } satisfies ChatAPIResponse,
+          { status: 200 }
+        );
+      }
+    }
+
+    const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
 
     // 4. PTB Builder
     const { transaction, steps, humanReadableSummary } = await buildPTB(

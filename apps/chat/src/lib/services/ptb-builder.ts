@@ -35,6 +35,8 @@ export async function buildPTB(
       return buildSwapPTB(tx, intent, amountInRaw, amountInMist);
     case "stake":
       return buildStakePTB(tx, intent, amountInRaw, amountInMist);
+    case "transfer":
+      return buildTransferPTB(tx, intent, amountInRaw, amountInMist);
     default:
       return buildGenericPTB(tx, intent);
   }
@@ -136,6 +138,45 @@ function buildStakePTB(
     transaction: tx,
     steps,
     humanReadableSummary: `Stake ${amountInRaw} ${tokenIn}`,
+  };
+}
+
+function buildTransferPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountInMist: bigint
+): PTBBuildResult {
+  const tokenIn = intent.tokenIn ?? "SUI";
+  const recipient = intent.recipient ?? "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+  const steps: TransactionStep[] = [
+    {
+      id: "step1",
+      description: {
+        id: `Langkah 1: Memisahkan ${amountInRaw} ${tokenIn} untuk dikirim`,
+        en: `Step 1: Splitting ${amountInRaw} ${tokenIn} for transfer`,
+      },
+    },
+    {
+      id: "step2",
+      description: {
+        id: `Langkah 2: Mengirim ke alamat tujuan`,
+        en: `Step 2: Transferring to recipient address`,
+      },
+    },
+  ];
+
+  // REAL PTB Operations for Transfer
+  if (tokenIn === "SUI" && amountInMist > BigInt(0)) {
+    const [coinToTransfer] = tx.splitCoins(tx.gas, [amountInMist]);
+    tx.transferObjects([coinToTransfer], tx.pure.address(recipient));
+  }
+
+  return {
+    transaction: tx,
+    steps,
+    humanReadableSummary: `Transfer ${amountInRaw} ${tokenIn} to ${recipient.slice(0, 6)}...${recipient.slice(-4)}`,
   };
 }
 

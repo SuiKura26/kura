@@ -13,6 +13,9 @@ export const intentSchema = z.object({
     "borrow",
     "provide_liquidity",
     "remove_liquidity",
+    "transfer",
+    "check_balance",
+    "check_price",
     "clarify",
   ]),
   tokenIn: z.string().optional(),
@@ -21,6 +24,7 @@ export const intentSchema = z.object({
   amountInType: z.enum(["absolute", "percentage"]).default("absolute"),
   protocol: z.string().optional(),
   slippageTolerance: z.number().min(0).max(100).optional(),
+  recipient: z.string().optional(),
   reason: z.string().optional(), // only for action === 'clarify'
 });
 

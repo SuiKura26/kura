@@ -56,6 +56,9 @@ export type IntentAction =
   | "borrow"
   | "provide_liquidity"
   | "remove_liquidity"
+  | "transfer"
+  | "check_balance"
+  | "check_price"
   | "clarify";
 
 export interface IntentJSON {
@@ -66,6 +69,7 @@ export interface IntentJSON {
   amountInType?: "absolute" | "percentage";
   protocol?: string;
   slippageTolerance?: number;
+  recipient?: string;
   reason?: string; // only for action === 'clarify'
 }
 
