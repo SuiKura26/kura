@@ -14,11 +14,15 @@ export function LoadingSteps({ step, language }: LoadingStepsProps) {
   const t = {
     id: {
       parsing: "Memahami permintaan Anda...",
+      routing: "Mencari rute pool terbaik...",
+      building: "Meracik transaksi...",
       simulating: "Menyimulasikan transaksi...",
       guardian: "Mengecek risiko dengan Guardian...",
     },
     en: {
       parsing: "Parsing your request...",
+      routing: "Searching for the best pool route...",
+      building: "Building transaction...",
       simulating: "Simulating transaction...",
       guardian: "Checking risks with Guardian...",
     }
@@ -26,6 +30,8 @@ export function LoadingSteps({ step, language }: LoadingStepsProps) {
 
   const steps = [
     { id: "parsing", label: t[language].parsing },
+    { id: "routing", label: t[language].routing },
+    { id: "building", label: t[language].building },
     { id: "simulating", label: t[language].simulating },
     { id: "guardian", label: t[language].guardian },
   ];

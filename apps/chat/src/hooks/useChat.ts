@@ -5,7 +5,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Message, ChatAPIResponse, ChatSession } from "../types/chat";
 
 export type Language = "id" | "en";
-export type LoadingStep = "parsing" | "building" | "simulating" | "guardian" | null;
+export type LoadingStep = "parsing" | "routing" | "building" | "simulating" | "guardian" | null;
 
 const STORAGE_KEY = "kura_chat_sessions";
 

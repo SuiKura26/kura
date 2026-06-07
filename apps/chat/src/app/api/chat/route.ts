@@ -177,6 +177,11 @@ export async function POST(request: NextRequest) {
 
     const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
 
+    // 4.5 Auto Routing (Aggregator)
+    sendEvent("step", "routing");
+    const { buildPTB, findBestSwapRoute } = await import("@/lib/services/ptb-builder");
+    const bestRoute = await findBestSwapRoute(intent, amountInBaseUnits, client as any);
+
     // 5. PTB Builder
     sendEvent("step", "building");
     const { transaction, steps, humanReadableSummary } = await buildPTB(
@@ -184,7 +189,8 @@ export async function POST(request: NextRequest) {
       senderAddress,
       coinInfo.coinType,
       amountInBaseUnits,
-      client as any
+      client as any,
+      bestRoute
     );
 
     // 5. REAL Dry Run Simulation (on-chain via RPC)
