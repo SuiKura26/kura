@@ -22,6 +22,10 @@ import {
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const chatAppUrl = process.env.NEXT_PUBLIC_CHAT_APP_URL || "http://localhost:5173";
+  const [logoPositions, setLogoPositions] = useState<{
+    sui: { top: string; left: string; size: string; rotate: string };
+    walrus: { top: string; left: string; size: string; rotate: string };
+  } | null>(null);
 
   // Auto-scroll through steps in simulation for visual effect
   useEffect(() => {
@@ -29,6 +33,25 @@ export default function Home() {
       setActiveStep((prev) => (prev + 1) % 5);
     }, 4000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Generate random positions on client mount to avoid SSR hydration issues
+  useEffect(() => {
+    const randomInRange = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+    setLogoPositions({
+      sui: {
+        top: `${randomInRange(10, 45)}%`,
+        left: `${randomInRange(5, 35)}%`,
+        size: `${randomInRange(280, 420)}px`,
+        rotate: `${randomInRange(-25, 25)}deg`,
+      },
+      walrus: {
+        top: `${randomInRange(20, 55)}%`,
+        left: `${randomInRange(60, 85)}%`,
+        size: `${randomInRange(280, 420)}px`,
+        rotate: `${randomInRange(-25, 25)}deg`,
+      }
+    });
   }, []);
 
   return (
@@ -73,8 +96,57 @@ export default function Home() {
 
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 md:px-16 text-center py-20 border-b border-border-base">
-          <div className="max-w-4xl mx-auto mb-16">
+        <section className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 md:px-16 text-center py-20 border-b border-border-base">
+          {logoPositions && (
+            <>
+              {/* Background Sui Logo Layer */}
+              <div
+                className="absolute z-20 opacity-30 dark:opacity-20 blur-[6px] hover:blur-none hover:opacity-100 hover:z-20 transition-all duration-500 cursor-pointer"
+                style={{
+                  top: logoPositions.sui.top,
+                  left: logoPositions.sui.left,
+                  width: logoPositions.sui.size,
+                  height: logoPositions.sui.size,
+                  transform: `translate(-50%, -50%) rotate(${logoPositions.sui.rotate})`,
+                }}
+              >
+                <Image
+                  src="/sui-logo.png"
+                  alt="Sui Logo BG"
+                  fill
+                  sizes="33vw"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              {/* Background Walrus Logo Layer */}
+              <div
+                className="absolute z-20 opacity-30 dark:opacity-20 blur-[6px] hover:blur-none hover:opacity-100 hover:z-20 transition-all duration-500 cursor-pointer"
+                style={{
+                  top: logoPositions.walrus.top,
+                  left: logoPositions.walrus.left,
+                  width: logoPositions.walrus.size,
+                  height: logoPositions.walrus.size,
+                  transform: `translate(-50%, -50%) rotate(${logoPositions.walrus.rotate})`,
+                }}
+              >
+                <Image
+                  src="/walrus-logo.png"
+                  alt="Walrus Logo BG"
+                  fill
+                  sizes="33vw"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </>
+          )}
+
+          {/* Backdrop Blur Layer - Opacity Blur Setengah */}
+          <div className="absolute inset-0 bg-bg-base/50 backdrop-blur-md z-10 pointer-events-none" />
+
+          <div className="relative z-30 max-w-4xl mx-auto mb-16">
             <h1 className="text-4xl md:text-6xl font-bold text-text-bright tracking-tight leading-none mb-6">
               Speak your DeFi intent.<br />Execute with protection.
             </h1>
@@ -92,7 +164,7 @@ export default function Home() {
           </div>
 
           {/* UI Mockup Visual */}
-          <div className="w-full max-w-5xl bg-card-bg-base border border-border-base rounded-lg overflow-hidden flex flex-col md:flex-row h-auto md:h-[480px]">
+          <div className="relative z-30 w-full max-w-5xl bg-card-bg-base border border-border-base rounded-lg overflow-hidden flex flex-col md:flex-row h-auto md:h-[480px]">
             {/* Chat Panel */}
             <div className="w-full md:w-2/5 border-r border-border-base flex flex-col p-6 text-left">
               <div className="flex-1 space-y-4 overflow-y-auto font-mono text-xs text-text-muted">
