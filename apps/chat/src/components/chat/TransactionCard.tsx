@@ -5,6 +5,8 @@ import { Check, X, Info } from "lucide-react";
 import { TransactionData } from "@/types/chat";
 import { Language } from "@/hooks/useChat";
 import { GuardianReport } from "./GuardianReport";
+import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 
 interface TransactionCardProps {
   data: TransactionData;
@@ -14,8 +16,11 @@ interface TransactionCardProps {
 export function TransactionCard({ data, language }: TransactionCardProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [executed, setExecuted] = useState(false);
+  const [txDigest, setTxDigest] = useState("");
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [typedConfirmation, setTypedConfirmation] = useState("");
+  
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const t = {
     id: {
@@ -60,10 +65,35 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
   }
 
   const handleExecute = () => {
-    if (canExecute) {
+    if (canExecute && data.txBytes) {
       setConfirmed(true);
-      // Simulate execution
-      setTimeout(() => setExecuted(true), 1500);
+      
+      try {
+        const txBytes = Uint8Array.from(Buffer.from(data.txBytes, 'base64'));
+        const transaction = Transaction.from(txBytes);
+
+        signAndExecuteTransaction(
+          {
+            transaction,
+          },
+          {
+            onSuccess: (result) => {
+              setTxDigest(result.digest);
+              setExecuted(true);
+            },
+            onError: (error) => {
+              console.error("Execution failed", error);
+              setConfirmed(false);
+              alert(language === "id" ? "Transaksi gagal atau dibatalkan." : "Transaction failed or cancelled.");
+            },
+          }
+        );
+      } catch (e) {
+        console.error("Failed to deserialize transaction", e);
+        setConfirmed(false);
+      }
+    } else if (!data.txBytes) {
+      alert(language === "id" ? "Data transaksi tidak valid." : "Invalid transaction data.");
     }
   };
 
@@ -75,10 +105,15 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
             <Check className="w-6 h-6 text-green-500" />
           </div>
           <h3 className="font-semibold text-lg">{text.successMsg}</h3>
-          <p className="text-sm text-muted-foreground">Digest: 0x9f8...a1b2</p>
-          <button className="text-sm text-primary hover:underline mt-2">
+          <p className="text-sm text-muted-foreground break-all px-2">Digest: {txDigest}</p>
+          <a 
+            href={`https://suiscan.xyz/testnet/tx/${txDigest}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline mt-2"
+          >
             {text.viewExplorer}
-          </button>
+          </a>
         </div>
       </div>
     );

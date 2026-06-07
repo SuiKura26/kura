@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Message, ChatAPIResponse } from "../types/chat";
 
 export type Language = "id" | "en";
 export type LoadingStep = "parsing" | "simulating" | "guardian" | null;
 
 export function useChat() {
+  const account = useCurrentAccount();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingStep, setLoadingStep] = useState<LoadingStep>(null);
   const [language, setLanguage] = useState<Language>("id");
@@ -45,7 +47,6 @@ export function useChat() {
       ];
 
       try {
-        // Phase 1: Parsing intent
         setLoadingStep("parsing");
 
         const response = await fetch("/api/chat", {
@@ -54,20 +55,13 @@ export function useChat() {
           body: JSON.stringify({
             messages: apiMessages,
             language,
+            walletAddress: account?.address,
           }),
         });
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
         }
-
-        // Phase 2 & 3: Simulating & Guardian (visual feedback while API processes)
-        setLoadingStep("simulating");
-        // Small delay to show the simulation step visually
-        await new Promise((r) => setTimeout(r, 500));
-
-        setLoadingStep("guardian");
-        await new Promise((r) => setTimeout(r, 500));
 
         const data: ChatAPIResponse = await response.json();
 
@@ -101,7 +95,7 @@ export function useChat() {
         addMessage(errorMsg);
       }
     },
-    [addMessage, language, messages]
+    [addMessage, language, messages, account?.address]
   );
 
   return {
@@ -113,5 +107,6 @@ export function useChat() {
     clearChat,
     isSidebarOpen,
     setIsSidebarOpen,
+    isWalletConnected: !!account,
   };
 }

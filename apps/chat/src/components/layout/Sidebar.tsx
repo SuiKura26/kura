@@ -2,6 +2,7 @@
 
 import { MessageSquarePlus, History, Wallet, Languages, Moon, Sun, X } from "lucide-react";
 import Image from "next/image";
+import { ConnectButton } from "@mysten/dapp-kit";
 import { Language } from "@/hooks/useChat";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -119,13 +120,13 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
 
           {/* Bottom Actions */}
           <div className="pt-4 border-t space-y-2 mt-auto">
-            {/* Wallet Connect (Placeholder) */}
-            <button className="flex items-center justify-between w-full p-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors text-sm font-medium">
-              <div className="flex items-center">
-                <Wallet className="w-4 h-4 mr-2" />
-                {text.wallet}
-              </div>
-            </button>
+            {/* Wallet Connect */}
+            <div className="w-full flex justify-center mb-2">
+              <ConnectButton 
+                connectText={text.wallet} 
+                className="!w-full !rounded-lg !bg-primary/10 hover:!bg-primary/20 !text-primary !text-sm !font-medium !h-[44px]"
+              />
+            </div>
 
             <div className="flex space-x-2">
               <button

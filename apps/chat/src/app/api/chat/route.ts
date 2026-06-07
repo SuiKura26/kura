@@ -124,6 +124,20 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Serialize transaction for frontend execution
+    // Using an empty/default client for building bytes if needed
+    const txBytes = await transaction.build({
+      client: new (await import("@mysten/sui/jsonRpc")).SuiJsonRpcClient({ 
+        url: "https://fullnode.testnet.sui.io:443",
+        network: "testnet" 
+      } as any) as any
+    }).catch(e => {
+      console.error("Failed to build txBytes:", e);
+      return undefined;
+    });
+
+    const base64TxBytes = txBytes ? Buffer.from(txBytes).toString("base64") : undefined;
+
     // 7. Compose response
     const transactionData: TransactionData = {
       action: intent.action,
@@ -134,6 +148,7 @@ export async function POST(request: NextRequest) {
       steps,
       gasEstimate: dryRunResult.gasUsed,
       guardianReport,
+      txBytes: base64TxBytes,
     };
 
     const responseContent =

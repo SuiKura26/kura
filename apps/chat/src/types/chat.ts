@@ -24,6 +24,7 @@ export interface TransactionData {
   steps: TransactionStep[];
   gasEstimate: string | number;
   guardianReport?: GuardianReportData;
+  txBytes?: string;
 }
 
 export interface Message {
