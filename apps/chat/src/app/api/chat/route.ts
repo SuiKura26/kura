@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { chatRequestSchema } from "@/lib/schemas";
 import { parseIntent } from "@/lib/agents/intent-parser";
 import { buildPTB } from "@/lib/services/ptb-builder";
-import { mockDryRun } from "@/lib/services/dry-run";
+import { dryRunTransaction } from "@/lib/services/dry-run";
 import { analyzeRisk } from "@/lib/agents/guardian";
 import { fetchTokenPrices, getExchangeRate } from "@/lib/services/price-oracle";
 import type { ChatAPIResponse, TransactionData } from "@/types/chat";
@@ -12,8 +12,6 @@ import type { ChatAPIResponse, TransactionData } from "@/types/chat";
  *
  * Main orchestration endpoint for Kura Chat.
  * Flow: Input → Intent Parse → PTB Build → Dry Run → Guardian → Response
- *
- * See PRD §9 for full system workflow specification.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +31,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { messages, walletAddress, language } = parseResult.data;
+
+    // Resolve sender address: Use frontend wallet if connected, otherwise fallback to .env testnet wallet
+    const senderAddress = walletAddress || process.env.TESTNET_WALLET_ADDRESS;
+
+    if (!senderAddress) {
+      return NextResponse.json(
+        {
+          role: "assistant",
+          content: language === "en" 
+            ? "Please connect your wallet first to execute transactions." 
+            : "Harap hubungkan dompet Anda terlebih dahulu untuk mengeksekusi transaksi.",
+          type: "text",
+        } satisfies ChatAPIResponse,
+        { status: 200 }
+      );
+    }
 
     // 2. Fetch prices concurrently with Intent Parsing to save time
     const pricesPromise = fetchTokenPrices();
@@ -79,21 +93,13 @@ export async function POST(request: NextRequest) {
     );
 
     // 4. PTB Builder
-    const { steps, humanReadableSummary } = buildPTB(
+    const { transaction, steps, humanReadableSummary } = await buildPTB(
       intent,
-      walletAddress
+      senderAddress
     );
 
-    // 5. Dry Run Simulation
-    // For MVP, use mock dry run since actual dry run requires
-    // a funded wallet and real pool interactions
-    const dryRunResult = mockDryRun(
-      intent.action,
-      intent.tokenIn ?? "USDC",
-      intent.tokenOut ?? "SUI",
-      intent.amountIn ?? 0,
-      marketRate
-    );
+    // 5. REAL Dry Run Simulation (on-chain via RPC)
+    const dryRunResult = await dryRunTransaction(transaction, senderAddress);
 
     // 6. Agent 2: Guardian AI Analysis
     let guardianReport;
