@@ -88,6 +88,9 @@ export async function POST(request: NextRequest) {
     const prices = await pricesPromise;
     const tokenIn = intent.tokenIn ?? "USDC";
     const tokenOut = intent.tokenOut ?? "SUI";
+
+    const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
+    const client = new SuiJsonRpcClient({ url: "https://fullnode.testnet.sui.io:443", network: "testnet" as any });
     
     // 3a. Handle check_price
     if (intent.action === "check_price") {
@@ -107,19 +110,30 @@ export async function POST(request: NextRequest) {
     // 3b. Handle check_balance
     if (intent.action === "check_balance") {
       try {
-        const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
-        const client = new SuiJsonRpcClient({ url: "https://fullnode.testnet.sui.io:443", network: "testnet" as any });
-        const coins = await client.getCoins({ owner: senderAddress });
-        // Simplified balance calculation (assuming SUI for MVP)
-        const totalBalanceMist = coins.data.reduce((acc: bigint, coin: any) => acc + BigInt(coin.balance), BigInt(0));
-        const totalBalanceSui = Number(totalBalanceMist) / 1_000_000_000;
+        const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
+        const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
+
+        if (!coinInfo) {
+          return NextResponse.json(
+            {
+              role: "assistant",
+              content: language === "en"
+                ? `You don't have any ${tokenIn} in your wallet.`
+                : `Anda tidak memiliki saldo ${tokenIn} di dompet Anda.`,
+              type: "text",
+            } satisfies ChatAPIResponse,
+            { status: 200 }
+          );
+        }
+
+        const totalBalance = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
         
         return NextResponse.json(
           {
             role: "assistant",
             content: language === "en"
-              ? `Your current SUI balance is ${totalBalanceSui.toFixed(4)} SUI.`
-              : `Saldo SUI Anda saat ini adalah ${totalBalanceSui.toFixed(4)} SUI.`,
+              ? `Your current ${tokenIn} balance is ${totalBalance.toFixed(4)} ${tokenIn}.`
+              : `Saldo ${tokenIn} Anda saat ini adalah ${totalBalance.toFixed(4)} ${tokenIn}.`,
             type: "text",
           } satisfies ChatAPIResponse,
           { status: 200 }
@@ -139,12 +153,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer)
+    const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
+    const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
+
+    if (!coinInfo) {
+      return NextResponse.json(
+        {
+          role: "assistant",
+          content: language === "en"
+            ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
+            : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
+          type: "text",
+        } satisfies ChatAPIResponse,
+        { status: 200 }
+      );
+    }
+
+    const amountInRaw = intent.amountIn ?? 0;
+    const amountInBaseUnits = BigInt(Math.floor(amountInRaw * (10 ** coinInfo.decimals)));
+
+    if (amountInBaseUnits > coinInfo.totalBalanceBase) {
+      const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
+      return NextResponse.json(
+        {
+          role: "assistant",
+          content: language === "en"
+            ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
+            : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
+          type: "text",
+        } satisfies ChatAPIResponse,
+        { status: 200 }
+      );
+    }
+
     const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
 
-    // 4. PTB Builder
+    // 5. PTB Builder
     const { transaction, steps, humanReadableSummary } = await buildPTB(
       intent,
-      senderAddress
+      senderAddress,
+      coinInfo.coinType,
+      amountInBaseUnits,
+      client as any
     );
 
     // 5. REAL Dry Run Simulation (on-chain via RPC)

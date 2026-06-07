@@ -13,41 +13,72 @@ const TESTNET_VALIDATOR = "0x8c6d48227b68677f5255c479fbcc726a4b12e3e9d80d220b33b
 const TESTNET_VAULT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // burned
 
 /**
+ * Helper to fetch, merge, and split coins dynamically
+ */
+async function getCoinForTx(
+  tx: Transaction,
+  client: any,
+  senderAddress: string,
+  coinType: string,
+  amountBaseUnits: bigint
+) {
+  if (amountBaseUnits === BigInt(0)) return null;
+
+  if (coinType === "0x2::sui::SUI") {
+    const [splitCoin] = tx.splitCoins(tx.gas, [amountBaseUnits]);
+    return splitCoin;
+  }
+
+  // Fetch non-SUI coins
+  const coinsResult = await client.getCoins({ owner: senderAddress, coinType });
+  if (coinsResult.data.length === 0) return null;
+
+  const coinObjects = coinsResult.data.map((c: any) => tx.object(c.coinObjectId));
+  
+  if (coinObjects.length > 1) {
+    tx.mergeCoins(coinObjects[0], coinObjects.slice(1));
+  }
+  
+  const [splitCoin] = tx.splitCoins(coinObjects[0], [amountBaseUnits]);
+  return splitCoin;
+}
+
+/**
  * PTB Builder Service
- * Converts IntentJSON into a real Sui Transaction that can be dry-run.
  */
 export async function buildPTB(
   intent: IntentJSON,
-  senderAddress?: string
+  senderAddress: string,
+  coinType: string,
+  amountBaseUnits: bigint,
+  client: any
 ): Promise<PTBBuildResult> {
   const tx = new Transaction();
+  tx.setSender(senderAddress);
 
-  if (senderAddress) {
-    tx.setSender(senderAddress);
-  }
-
-  // Common: calculate amount in MIST (1 SUI = 10^9 MIST)
   const amountInRaw = intent.amountIn ?? 0;
-  const amountInMist = BigInt(Math.floor(amountInRaw * 1_000_000_000));
 
   switch (intent.action) {
     case "swap":
-      return buildSwapPTB(tx, intent, amountInRaw, amountInMist);
+      return buildSwapPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
     case "stake":
-      return buildStakePTB(tx, intent, amountInRaw, amountInMist);
+      return buildStakePTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
     case "transfer":
-      return buildTransferPTB(tx, intent, amountInRaw, amountInMist);
+      return buildTransferPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
     default:
       return buildGenericPTB(tx, intent);
   }
 }
 
-function buildSwapPTB(
+async function buildSwapPTB(
   tx: Transaction,
   intent: IntentJSON,
   amountInRaw: number,
-  amountInMist: bigint
-): PTBBuildResult {
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
   const tokenOut = intent.tokenOut ?? "USDC";
   const protocol = intent.protocol ?? "cetus";
@@ -78,12 +109,8 @@ function buildSwapPTB(
   ];
 
   // REAL PTB Operations for Swap Simulation
-  // For hackathon MVP on testnet, if tokenIn is SUI, we split the gas coin.
-  // We simulate a swap by transferring the split coin. In a full Cetus integration, 
-  // this would be tx.moveCall to the Cetus Router.
-  if (tokenIn === "SUI" && amountInMist > BigInt(0)) {
-    const [coinToSwap] = tx.splitCoins(tx.gas, [amountInMist]);
-    // Simulate sending it to a DEX pool (burning it for the dry run to show balance change)
+  const coinToSwap = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (coinToSwap) {
     tx.transferObjects([coinToSwap], tx.pure.address(TESTNET_VAULT));
   }
 
@@ -94,12 +121,15 @@ function buildSwapPTB(
   };
 }
 
-function buildStakePTB(
+async function buildStakePTB(
   tx: Transaction,
   intent: IntentJSON,
   amountInRaw: number,
-  amountInMist: bigint
-): PTBBuildResult {
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
 
   const steps: TransactionStep[] = [
@@ -119,19 +149,19 @@ function buildStakePTB(
     },
   ];
 
-  // REAL PTB Operations for Staking
-  if (tokenIn === "SUI" && amountInMist > BigInt(0)) {
-    const [stakeCoin] = tx.splitCoins(tx.gas, [amountInMist]);
-    
-    // Exact move call for Sui Native Staking!
-    tx.moveCall({
-      target: "0x3::sui_system::request_add_stake",
-      arguments: [
-        tx.object("0x5"), // SuiSystemState
-        stakeCoin,
-        tx.pure.address(TESTNET_VALIDATOR),
-      ],
-    });
+  // Native Staking only works with SUI.
+  if (coinType === "0x2::sui::SUI") {
+    const stakeCoin = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+    if (stakeCoin) {
+      tx.moveCall({
+        target: "0x3::sui_system::request_add_stake",
+        arguments: [
+          tx.object("0x5"), // SuiSystemState
+          stakeCoin,
+          tx.pure.address(TESTNET_VALIDATOR),
+        ],
+      });
+    }
   }
 
   return {
@@ -141,12 +171,15 @@ function buildStakePTB(
   };
 }
 
-function buildTransferPTB(
+async function buildTransferPTB(
   tx: Transaction,
   intent: IntentJSON,
   amountInRaw: number,
-  amountInMist: bigint
-): PTBBuildResult {
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
   const recipient = intent.recipient ?? "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -167,9 +200,8 @@ function buildTransferPTB(
     },
   ];
 
-  // REAL PTB Operations for Transfer
-  if (tokenIn === "SUI" && amountInMist > BigInt(0)) {
-    const [coinToTransfer] = tx.splitCoins(tx.gas, [amountInMist]);
+  const coinToTransfer = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (coinToTransfer) {
     tx.transferObjects([coinToTransfer], tx.pure.address(recipient));
   }
 
