@@ -251,13 +251,29 @@ export function TransactionCard({ data, language, onCancel }: TransactionCardPro
           </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-lg sm:text-2xl font-bold tracking-tight">
-            {data.amountIn} {data.tokenIn} <span className="text-muted-foreground font-normal">→</span> {data.tokenOut}
-          </span>
-          <span className="text-sm text-muted-foreground flex items-center mt-1">
-            <Info className="w-3 h-3 mr-1 inline" />
-            {text.estOutput}: ≈{data.estimatedOutput} {data.tokenOut}
-          </span>
+          {data.action === "swap" ? (
+            <>
+              <span className="text-lg sm:text-2xl font-bold tracking-tight">
+                {data.amountIn} {data.tokenIn} <span className="text-muted-foreground font-normal">→</span> {data.tokenOut}
+              </span>
+              <span className="text-sm text-muted-foreground flex items-center mt-1">
+                <Info className="w-3 h-3 mr-1 inline" />
+                {text.estOutput}: ≈{data.estimatedOutput} {data.tokenOut}
+              </span>
+            </>
+          ) : data.action === "transfer" ? (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              {language === "id" ? "Kirim" : "Transfer"} {data.amountIn} {data.tokenIn}
+            </span>
+          ) : data.action === "stake" ? (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              Stake {data.amountIn} {data.tokenIn}
+            </span>
+          ) : (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              {data.action} {data.amountIn} {data.tokenIn}
+            </span>
+          )}
         </div>
       </div>
 
@@ -288,10 +304,12 @@ export function TransactionCard({ data, language, onCancel }: TransactionCardPro
           <span className="text-muted-foreground">{text.gasFee}</span>
           <span className="font-mono">{data.gasEstimate} SUI</span>
         </div>
-        <div className="flex justify-between text-sm font-medium pt-1 border-t mt-2">
-          <span>{text.netOutput}</span>
-          <span className="font-mono text-primary">≈{data.estimatedOutput} {data.tokenOut}</span>
-        </div>
+        {data.action === "swap" && (
+          <div className="flex justify-between text-sm font-medium pt-1 border-t mt-2">
+            <span>{text.netOutput}</span>
+            <span className="font-mono text-primary">≈{data.estimatedOutput} {data.tokenOut}</span>
+          </div>
+        )}
       </div>
 
       {/* Guardian Report */}
