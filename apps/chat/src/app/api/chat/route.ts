@@ -202,6 +202,11 @@ export async function POST(request: NextRequest) {
       bestRoute
     );
 
+    // Serialize transaction for frontend execution
+    // Using toJSON() BEFORE dryRunTransaction so we don't resolve and lock object versions and gas coins on the server
+    const txJSON = await transaction.toJSON();
+    const base64TxBytes = Buffer.from(txJSON).toString("base64");
+
     // 5. REAL Dry Run Simulation (on-chain via RPC)
     sendEvent("step", "simulating");
     const dryRunResult = await dryRunTransaction(transaction, senderAddress);
@@ -230,11 +235,6 @@ export async function POST(request: NextRequest) {
         },
       };
     }
-
-    // Serialize transaction for frontend execution
-    // Using toJSON() so we don't resolve gas coins on the server, which prevents stale gas errors
-    const txJSON = await transaction.toJSON();
-    const base64TxBytes = Buffer.from(txJSON).toString("base64");
 
     // 7. Walrus Integration (Store Intent & Report)
     const { uploadToWalrus } = await import("@/lib/services/walrus");
