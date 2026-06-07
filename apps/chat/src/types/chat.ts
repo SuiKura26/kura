@@ -24,6 +24,8 @@ export interface TransactionData {
   steps: TransactionStep[];
   gasEstimate: string | number;
   guardianReport?: GuardianReportData;
+  txBytes?: string;
+  kuraLoggerPackageId?: string;
 }
 
 export interface Message {
@@ -41,3 +43,54 @@ export interface ChatSession {
   messages: Message[];
   createdAt: number;
 }
+
+// ============================================================
+// Backend Types
+// ============================================================
+
+export type IntentAction =
+  | "swap"
+  | "stake"
+  | "unstake"
+  | "lend"
+  | "borrow"
+  | "provide_liquidity"
+  | "remove_liquidity"
+  | "transfer"
+  | "check_balance"
+  | "check_price"
+  | "clarify";
+
+export interface IntentJSON {
+  action: IntentAction;
+  tokenIn?: string;
+  tokenOut?: string;
+  amountIn?: number;
+  amountInType?: "absolute" | "percentage";
+  protocol?: string;
+  slippageTolerance?: number;
+  recipient?: string;
+  reason?: string; // only for action === 'clarify'
+}
+
+export interface DryRunResult {
+  success: boolean;
+  estimatedOutput: number;
+  gasUsed: number;
+  balanceChanges: { coinType: string; amount: string }[];
+  error?: string;
+}
+
+export interface ChatAPIRequest {
+  messages: { role: Role; content: string }[];
+  walletAddress?: string;
+  language?: "id" | "en";
+}
+
+export interface ChatAPIResponse {
+  role: Role;
+  content: string;
+  type: MessageType;
+  transactionData?: TransactionData;
+}
+
