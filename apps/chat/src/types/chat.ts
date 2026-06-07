@@ -35,6 +35,7 @@ export interface TransactionData {
     slippageBps: number;
     poolLiqUsd: number;
   };
+  isCancelled?: boolean;
 }
 
 export interface Message {

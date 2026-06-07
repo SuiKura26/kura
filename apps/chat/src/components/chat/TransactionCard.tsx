@@ -11,11 +11,12 @@ import { Transaction } from "@mysten/sui/transactions";
 interface TransactionCardProps {
   data: TransactionData;
   language: Language;
+  onCancel?: () => void;
 }
 
-export function TransactionCard({ data, language }: TransactionCardProps) {
+export function TransactionCard({ data, language, onCancel }: TransactionCardProps) {
   const [confirmed, setConfirmed] = useState(false);
-  const [isCancelled, setIsCancelled] = useState(false);
+  const [localIsCancelled, setLocalIsCancelled] = useState(false);
   const [executionStep, setExecutionStep] = useState(0); // 0: initial, 1: report, 2: main tx, 3: log, 4: done
   const [txDigest, setTxDigest] = useState("");
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
@@ -191,6 +192,13 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
     }
   };
 
+  const isCancelled = data.isCancelled || localIsCancelled;
+
+  const handleCancel = () => {
+    setLocalIsCancelled(true);
+    if (onCancel) onCancel();
+  };
+
   if (isCancelled) {
     return (
       <div className="w-full max-w-sm rounded-xl border border-red-500/20 bg-card p-4 shadow-sm opacity-60">
@@ -324,7 +332,7 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
       {/* Actions */}
       <div className="p-4 flex gap-3">
         <button 
-          onClick={() => setIsCancelled(true)}
+          onClick={handleCancel}
           disabled={confirmed}
           className="flex-1 px-4 py-2 rounded-lg border border-input bg-background hover:bg-accent text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >

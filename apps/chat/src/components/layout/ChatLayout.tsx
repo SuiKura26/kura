@@ -18,6 +18,7 @@ export function ChatLayout() {
     createNewSession,
     switchSession,
     deleteSession,
+    cancelTransaction,
     isSidebarOpen,
     setIsSidebarOpen,
   } = useChat();
@@ -54,6 +55,7 @@ export function ChatLayout() {
           loadingStep={loadingStep}
           language={language}
           onSuggestionClick={sendMessage}
+          onCancelTransaction={cancelTransaction}
         />
 
         {/* Input Area */}

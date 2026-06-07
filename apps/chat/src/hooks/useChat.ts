@@ -135,6 +135,19 @@ export function useChat() {
     updateSessionMessages(() => []);
   }, [updateSessionMessages]);
 
+  const cancelTransaction = useCallback((messageId: string) => {
+    updateSessionMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId && msg.transactionData
+          ? {
+              ...msg,
+              transactionData: { ...msg.transactionData, isCancelled: true },
+            }
+          : msg
+      )
+    );
+  }, [updateSessionMessages]);
+
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim() || !activeSessionId) return;
@@ -219,6 +232,7 @@ export function useChat() {
     createNewSession,
     switchSession,
     deleteSession,
+    cancelTransaction,
     isSidebarOpen,
     setIsSidebarOpen,
     isWalletConnected: !!account,

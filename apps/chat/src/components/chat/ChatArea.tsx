@@ -12,9 +12,10 @@ interface ChatAreaProps {
   loadingStep: LoadingStep;
   language: Language;
   onSuggestionClick: (suggestion: string) => void;
+  onCancelTransaction?: (id: string) => void;
 }
 
-export function ChatArea({ messages, loadingStep, language, onSuggestionClick }: ChatAreaProps) {
+export function ChatArea({ messages, loadingStep, language, onSuggestionClick, onCancelTransaction }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function ChatArea({ messages, loadingStep, language, onSuggestionClick }:
     <div className="flex-1 overflow-y-auto p-4 pb-44 md:p-6 md:pb-52">
       <div className="max-w-4xl mx-auto flex flex-col space-y-2">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} language={language} />
+          <MessageBubble key={msg.id} message={msg} language={language} onCancelTransaction={onCancelTransaction} />
         ))}
         
         {loadingStep && (
