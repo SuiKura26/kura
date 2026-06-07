@@ -231,18 +231,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Serialize transaction for frontend execution
-    // Using an empty/default client for building bytes if needed
-    const txBytes = await transaction.build({
-      client: new (await import("@mysten/sui/jsonRpc")).SuiJsonRpcClient({ 
-        url: "https://fullnode.testnet.sui.io:443",
-        network: "testnet" 
-      } as any) as any
-    }).catch(e => {
-      console.error("Failed to build txBytes:", e);
-      return undefined;
-    });
-
-    const base64TxBytes = txBytes ? Buffer.from(txBytes).toString("base64") : undefined;
+    // Using toJSON() so we don't resolve gas coins on the server, which prevents stale gas errors
+    const txJSON = await transaction.toJSON();
+    const base64TxBytes = Buffer.from(txJSON).toString("base64");
 
     // 7. Walrus Integration (Store Intent & Report)
     const { uploadToWalrus } = await import("@/lib/services/walrus");

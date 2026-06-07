@@ -51,7 +51,9 @@ export function GuardianReport({ report, language }: GuardianReportProps) {
 
   const config = getRiskConfig();
   const slippagePercent = (slippageBps / 100).toFixed(2);
-  const formattedLiq = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(poolLiqUsd);
+  const formattedLiq = poolLiqUsd !== null 
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(poolLiqUsd)
+    : "Unknown";
 
   return (
     <div className={`mt-4 p-4 rounded-xl border ${config.borderColor} ${config.bgColor}`}>

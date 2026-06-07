@@ -10,7 +10,7 @@ export interface TransactionStep {
 export interface GuardianReportData {
   riskLevel: 0 | 1 | 2 | 3; // 0=Rendah, 1=Sedang, 2=Tinggi, 3=Kritis
   slippageBps: number;
-  poolLiqUsd: number;
+  poolLiqUsd: number | null;
   explanation: Record<"id" | "en", string>;
   recommendation: Record<"id" | "en", string>;
 }

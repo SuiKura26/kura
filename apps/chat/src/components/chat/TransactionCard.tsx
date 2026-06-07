@@ -107,7 +107,7 @@ export function TransactionCard({ data, language, onCancel }: TransactionCardPro
           reportTx.pure.vector('u8', walrus.intentHash),
           reportTx.pure.u8(walrus.riskLevel),
           reportTx.pure.u64(walrus.slippageBps),
-          reportTx.pure.u64(walrus.poolLiqUsd),
+          reportTx.pure.u64(walrus.poolLiqUsd ?? 0),
           reportTx.pure.vector('u8', walrus.reportHash),
           reportTx.pure.string(walrus.intentBlobId),
           reportTx.pure.string(walrus.reportBlobId),
@@ -136,8 +136,8 @@ export function TransactionCard({ data, language, onCancel }: TransactionCardPro
       // STEP 2: Main Execution (Swap/Stake) + Confirm Intent
       // ----------------------------------------------------
       setExecutionStep(2);
-      const mainTxBytes = Uint8Array.from(Buffer.from(data.txBytes, 'base64'));
-      const mainTx = Transaction.from(mainTxBytes);
+      const mainTxStr = Buffer.from(data.txBytes, 'base64').toString('utf8');
+      const mainTx = Transaction.from(mainTxStr);
 
       // Append confirm_intent
       mainTx.moveCall({

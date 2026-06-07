@@ -7,7 +7,7 @@ import type { DryRunResult, GuardianReportData, IntentJSON } from "@/types/chat"
 const guardianReportSchema = z.object({
   riskLevel: z.number().min(0).max(3),
   slippageBps: z.number().min(0),
-  poolLiqUsd: z.number().min(0),
+  poolLiqUsd: z.number().min(0).nullable(),
   explanation: z.object({
     id: z.string(),
     en: z.string(),
