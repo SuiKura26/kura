@@ -53,6 +53,15 @@ export function useChat() {
     }
   }, [sessions, isReady]);
 
+  // Clear local storage and sessions on wallet disconnect
+  useEffect(() => {
+    if (isReady && !account) {
+      localStorage.removeItem(STORAGE_KEY);
+      setSessions([]);
+      setActiveSessionId(null);
+    }
+  }, [account, isReady]);
+
   const activeSession = sessions.find((s) => s.id === activeSessionId) || null;
   const messages = activeSession?.messages || [];
 
@@ -263,6 +272,7 @@ export function useChat() {
     cancelTransaction,
     isSidebarOpen,
     setIsSidebarOpen,
+    account,
     isWalletConnected: !!account,
   };
 }

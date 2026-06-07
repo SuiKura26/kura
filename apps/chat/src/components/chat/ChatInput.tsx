@@ -8,18 +8,19 @@ interface ChatInputProps {
   language: Language;
   onSend: (message: string) => void;
   disabled?: boolean;
+  isWalletConnected?: boolean;
 }
 
-export function ChatInput({ language, onSend, disabled }: ChatInputProps) {
+export function ChatInput({ language, onSend, disabled, isWalletConnected = true }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const t = {
     id: {
-      placeholder: "Ketik perintah transaksi Anda di sini...",
+      placeholder: isWalletConnected ? "Ketik perintah transaksi Anda di sini..." : "Harap hubungkan wallet Anda terlebih dahulu untuk memulai percakapan...",
     },
     en: {
-      placeholder: "Type your transaction command here...",
+      placeholder: isWalletConnected ? "Type your transaction command here..." : "Please connect your wallet first to start chatting...",
     }
   };
 
@@ -58,14 +59,14 @@ export function ChatInput({ language, onSend, disabled }: ChatInputProps) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={text.placeholder}
-        disabled={disabled}
+        disabled={disabled || !isWalletConnected}
         rows={1}
-        className="w-full resize-none bg-transparent outline-none p-2 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
+        className="w-full resize-none bg-transparent outline-none p-2 text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
         maxLength={500}
       />
       <button
         onClick={handleSend}
-        disabled={!input.trim() || disabled}
+        disabled={!input.trim() || disabled || !isWalletConnected}
         className="ml-2 p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex-shrink-0"
       >
         <SendHorizontal className="w-5 h-5" />

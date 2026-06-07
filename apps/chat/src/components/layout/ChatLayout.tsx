@@ -21,6 +21,7 @@ export function ChatLayout() {
     cancelTransaction,
     isSidebarOpen,
     setIsSidebarOpen,
+    isWalletConnected,
   } = useChat();
 
   return (
@@ -64,6 +65,7 @@ export function ChatLayout() {
             language={language}
             onSend={sendMessage}
             disabled={loadingStep !== null}
+            isWalletConnected={isWalletConnected}
           />
           <div className="text-center mt-2 text-[10px] md:text-xs text-muted-foreground/70">
             {language === "id"
