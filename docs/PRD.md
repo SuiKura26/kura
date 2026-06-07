@@ -667,3 +667,138 @@ Timeline ini dirancang untuk skenario hackathon/kompetisi dengan durasi pengemba
 *Dokumen ini merupakan landasan hidup (living document) yang akan diperbarui seiring berkembangnya pemahaman tim terhadap kebutuhan pengguna dan kemampuan teknis sistem. Setiap perubahan signifikan terhadap spesifikasi ini harus melalui proses review dan mendapatkan persetujuan dari Product Owner.*
 
 **Tim Kura · Intent Engine for DeFi on Sui · Versi 1.0 · Juni 2025**
+
+---
+
+## 17. Smart Contract Development Log
+
+**Developer**: Whit3knight  
+**Role**: Smart Contract Engineer  
+**Tanggal Pengerjaan**: 07 Juni 2026  
+**Status**: ✅ Selesai & Siap Deploy
+
+---
+
+### 17.1 Overview
+
+Modul smart contract KuraLogger telah berhasil dibangun menggunakan
+bahasa Move dan di-deploy ke Sui Testnet. Modul ini berfungsi sebagai
+lapisan audit trail on-chain yang permanen dan tidak dapat dimanipulasi
+untuk seluruh aktivitas sistem Kura.
+
+---
+
+### 17.2 File yang Dibuat
+
+| File | Lokasi | Deskripsi |
+|---|---|---|
+| logger.move | apps/smart-contracts/sources/ | Module utama KuraLogger |
+| Move.toml | apps/smart-contracts/ | Konfigurasi project Move |
+| security_tests.move | apps/smart-contracts/tests/ | Security test suite |
+| TEST_SECURITY_REPORT.md | root project | Laporan hasil security test |
+| INTEGRATION_STATUS.md | root project | Status integrasi ke backend/frontend |
+| DEPLOYMENT_REPORT.md | root project | Laporan hasil deploy ke testnet |
+
+---
+
+### 17.3 Komponen Smart Contract yang Dibangun
+
+**Structs (On-chain Objects)**
+
+`GuardianReport` — objek on-chain yang dibuat setelah Guardian AI
+selesai menganalisis intent pengguna. Fields:
+- id, user_address, intent_hash, risk_level, slippage_bps
+- pool_liq_usd, report_hash, intent_blob_id, report_blob_id
+- timestamp_ms, confirmed
+
+`ExecutionLog` — objek on-chain yang dibuat setelah transaksi DeFi
+berhasil dieksekusi. Fields:
+- id, guardian_report_id, user_address, tx_digest
+- confirmed_at_ms, executed_at_ms, success
+
+**Events (On-chain Signals)**
+
+- `GuardianReportCreatedEvent` — di-emit saat laporan Guardian dibuat
+- `UserConfirmedEvent` — di-emit saat pengguna konfirmasi eksplisit
+- `TransactionExecutedEvent` — di-emit saat eksekusi DeFi selesai
+
+**Entry Functions**
+
+| Function | Dipanggil Saat | Parameter Kunci |
+|---|---|---|
+| emit_guardian_report() | Guardian AI selesai analisis | user_address, intent_hash, risk_level, slippage_bps, pool_liq_usd, report_hash, intent_blob_id, report_blob_id |
+| confirm_intent() | User tekan "Saya Paham & Eksekusi" | report (mutable ref GuardianReport) |
+| log_execution() | Transaksi DeFi selesai on-chain | report, tx_digest, confirmed_at_ms, success |
+
+**Walrus Storage Integration**
+
+Setiap GuardianReport menyimpan 2 referensi Walrus blob:
+- `intent_blob_id` — pointer ke teks intent lengkap user di Walrus
+- `report_blob_id` — pointer ke teks laporan Guardian lengkap di Walrus
+
+Pola arsitektur: Sui menyimpan hash + metadata (source of truth),
+Walrus menyimpan konten teks penuh (content addressable storage).
+Hash di Sui memvalidasi integritas blob di Walrus.
+
+**Error Constants & Validations**
+
+| Constant | Nilai | Trigger |
+|---|---|---|
+| ENotAuthorized | 0 | Sender bukan owner report |
+| EAlreadyConfirmed | 1 | Report sudah dikonfirmasi sebelumnya |
+| EReportNotConfirmed | 2 | log_execution dipanggil sebelum confirm |
+| EInvalidRiskLevel | 3 | risk_level lebih dari 3 |
+| EInvalidDigestLength | 4 | tx_digest bukan tepat 32 bytes |
+
+---
+
+### 17.4 Security Test Summary
+
+**Hasil**: 17/17 test passed — 0 failed
+
+| Kategori | Jumlah Test | Status |
+|---|---|---|
+| Access Control | 3 | ✅ Semua Lulus |
+| State Integrity | 3 | ✅ Semua Lulus |
+| Input Validation | 4 | ✅ Semua Lulus |
+| Object Ownership & Transfer | 2 | ✅ Semua Lulus |
+| Event Emission | 3 | ✅ Semua Lulus |
+| Walrus Field Integrity | 2 | ✅ Semua Lulus |
+
+Vulnerability yang ditemukan dan sudah dipatch:
+- Access control missing di confirm_intent dan log_execution
+- Double confirmation tidak terblokir
+- log_execution bisa dipanggil tanpa konfirmasi sebelumnya
+- risk_level tidak divalidasi batasannya
+- tx_digest tidak divalidasi panjang 32 bytes
+
+Semua vulnerability telah dipatch di logger.move sebelum deploy.
+Detail lengkap: lihat TEST_SECURITY_REPORT.md
+
+---
+
+### 17.5 Integrasi ke Tim
+
+Backend perlu menyiapkan:
+- Koneksi Sui client ke testnet menggunakan PACKAGE_ID
+- Upload teks intent dan laporan Guardian ke Walrus publisher
+  sebelum memanggil emit_guardian_report()
+- PTB builder untuk 3 entry function
+- Event listener untuk 3 event via Sui WebSocket RPC
+
+Frontend perlu menyiapkan:
+- useSignAndExecuteTransaction dari @mysten/dapp-kit untuk
+  confirm_intent (harus di-sign user langsung)
+- Fetch blob dari Walrus aggregator menggunakan blob_id
+- Verifikasi hash lokal vs intent_hash on-chain untuk validasi
+  integritas konten
+
+---
+
+### 17.6 Deployment Info
+- Network: Sui Testnet
+- Package ID: 0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
+- Deploy Date: 07 Juni 2026
+- Explorer: https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
+
+

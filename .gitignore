@@ -62,3 +62,11 @@ pnpm-debug.log*
 # ===========================
 *.tsbuildinfo
 next-env.d.ts
+
+# ===========================
+# Test & Deployment results
+# ===========================
+deploy_result.json
+test_results.json
+test_results.txt
+
