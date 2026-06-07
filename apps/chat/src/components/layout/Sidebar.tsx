@@ -47,7 +47,7 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
@@ -76,8 +76,8 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
               </div>
               <span className="font-bold text-xl tracking-tight">Kura</span>
             </div>
-            
-            <button 
+
+            <button
               className="md:hidden p-1 rounded-md hover:bg-accent text-muted-foreground"
               onClick={() => setIsMobileOpen(false)}
             >
@@ -86,7 +86,7 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
           </div>
 
           {/* New Chat Action */}
-          <button 
+          <button
             onClick={() => {
               onNewChat();
               setIsMobileOpen(false);
@@ -125,7 +125,7 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
             </button>
 
             <div className="flex space-x-2">
-              <button 
+              <button
                 onClick={toggleLanguage}
                 className="flex-1 flex items-center justify-center p-2 rounded-lg border bg-background hover:bg-accent transition-colors text-sm"
                 title="Toggle Language"
@@ -133,8 +133,8 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
                 <Languages className="w-4 h-4 mr-2" />
                 <span className="uppercase font-semibold text-xs">{language}</span>
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="flex-1 flex items-center justify-center p-2 rounded-lg border bg-background hover:bg-accent transition-colors"
                 title="Toggle Theme"
