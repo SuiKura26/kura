@@ -78,8 +78,49 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
           },
           {
             onSuccess: (result) => {
-              setTxDigest(result.digest);
-              setExecuted(true);
+              const digest = result.digest;
+              
+              if (data.kuraLoggerPackageId) {
+                // Phase 2: Execute KuraLogger on-chain log
+                try {
+                  const logTx = new Transaction();
+                  // Using an empty/generic object to represent the logger state for MVP
+                  // Usually there is a shared logger object. Assuming 0x6 for demonstration.
+                  logTx.moveCall({
+                    target: `${data.kuraLoggerPackageId}::kura_logger::record_transaction`,
+                    arguments: [
+                      // Sender address (implicit in Move, but PRD says to store it, so we pass it if required)
+                      // Risk level (0-3)
+                      logTx.pure.u8(riskLevel),
+                      // Original Digest
+                      logTx.pure.string(digest),
+                    ],
+                  });
+
+                  signAndExecuteTransaction(
+                    { transaction: logTx },
+                    {
+                      onSuccess: () => {
+                        setTxDigest(digest);
+                        setExecuted(true);
+                      },
+                      onError: (e) => {
+                        console.error("Logger execution failed", e);
+                        // Still mark original tx as successful
+                        setTxDigest(digest);
+                        setExecuted(true);
+                      }
+                    }
+                  );
+                } catch (e) {
+                  console.error("Failed to build logger tx", e);
+                  setTxDigest(digest);
+                  setExecuted(true);
+                }
+              } else {
+                setTxDigest(digest);
+                setExecuted(true);
+              }
             },
             onError: (error) => {
               console.error("Execution failed", error);

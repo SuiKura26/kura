@@ -25,6 +25,7 @@ export interface TransactionData {
   gasEstimate: string | number;
   guardianReport?: GuardianReportData;
   txBytes?: string;
+  kuraLoggerPackageId?: string;
 }
 
 export interface Message {

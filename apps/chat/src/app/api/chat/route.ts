@@ -149,6 +149,7 @@ export async function POST(request: NextRequest) {
       gasEstimate: dryRunResult.gasUsed,
       guardianReport,
       txBytes: base64TxBytes,
+      kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID,
     };
 
     const responseContent =
