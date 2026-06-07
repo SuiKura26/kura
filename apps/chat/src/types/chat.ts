@@ -70,7 +70,8 @@ export type IntentAction =
   | "transfer"
   | "check_balance"
   | "check_price"
-  | "clarify";
+  | "clarify"
+  | "chat";
 
 export interface IntentJSON {
   action: IntentAction;
@@ -82,6 +83,7 @@ export interface IntentJSON {
   slippageTolerance?: number;
   recipient?: string;
   reason?: string; // only for action === 'clarify'
+  response?: string; // only for action === 'chat'
 }
 
 export interface DryRunResult {

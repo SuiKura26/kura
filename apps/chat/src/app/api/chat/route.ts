@@ -110,7 +110,16 @@ export async function POST(request: NextRequest) {
         } );
     }
 
-    // 3b. Handle check_balance
+    // 3b. Handle general chat
+    if (intent.action === "chat") {
+      return sendResultAndClose({
+          role: "assistant",
+          content: intent.response || "...",
+          type: "text",
+        } );
+    }
+
+    // 3c. Handle check_balance
     if (intent.action === "check_balance") {
       try {
         const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
