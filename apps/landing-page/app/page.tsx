@@ -21,6 +21,7 @@ import {
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
+  const chatAppUrl = process.env.NEXT_PUBLIC_CHAT_APP_URL || "http://localhost:5173";
 
   // Auto-scroll through steps in simulation for visual effect
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function Home() {
           <div className="flex gap-4">
             <a 
               className="hidden md:block px-4 py-2 text-xs font-bold text-text-bright border border-border-accent hover:border-text-bright transition-all bg-transparent rounded-sm cursor-pointer"
-              href="http://localhost:5173"
+              href={chatAppUrl}
             >
               Launch App
             </a>
@@ -440,7 +441,7 @@ export default function Home() {
             </h2>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <a 
-                href="http://localhost:5173"
+                href={chatAppUrl}
                 className="px-12 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm flex items-center justify-center gap-2"
               >
                 Launch Kura <ArrowRight className="w-4 h-4" />

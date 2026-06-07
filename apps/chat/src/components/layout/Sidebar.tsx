@@ -57,7 +57,10 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
         <div className="h-full flex flex-col p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-8 px-2">
-            <div className="flex items-center space-x-2">
+            <a 
+              href={process.env.NEXT_PUBLIC_LANDING_PAGE_URL || "http://localhost:3000"}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 flex items-center justify-center">
                 <Image
                   src="/kura-logo-dark-mode.png"
@@ -75,7 +78,7 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
                 />
               </div>
               <span className="font-bold text-xl tracking-tight">Kura</span>
-            </div>
+            </a>
 
             <button
               className="md:hidden p-1 rounded-md hover:bg-accent text-muted-foreground"
