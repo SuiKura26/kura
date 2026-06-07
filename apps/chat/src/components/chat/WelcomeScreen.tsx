@@ -38,19 +38,19 @@ export function WelcomeScreen({ language, onSuggestionClick }: WelcomeScreenProp
     <div className="flex flex-col items-center justify-center h-full p-4 pb-44 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col items-center space-y-4">
         {/* Placeholder for Logo, since we'll configure next/image to allow local static or just use img for simplicity */}
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center p-2">
+        <div className="w-24 h-24 flex items-center justify-center">
           <Image
             src="/kura-logo-dark-mode.png"
             alt="Kura Logo"
-            width={80}
-            height={80}
+            width={96}
+            height={96}
             className="hidden dark:block object-contain"
           />
           <Image
             src="/kura-logo-light-mode.png"
             alt="Kura Logo"
-            width={80}
-            height={80}
+            width={96}
+            height={96}
             className="block dark:hidden object-contain"
           />
         </div>

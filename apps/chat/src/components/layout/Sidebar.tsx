@@ -58,19 +58,19 @@ export function Sidebar({ language, toggleLanguage, onNewChat, isMobileOpen, set
           {/* Header */}
           <div className="flex items-center justify-between mb-8 px-2">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center p-1">
+              <div className="w-8 h-8 flex items-center justify-center">
                 <Image
                   src="/kura-logo-dark-mode.png"
                   alt="Kura"
-                  width={24}
-                  height={24}
+                  width={32}
+                  height={32}
                   className="hidden dark:block object-contain"
                 />
                 <Image
                   src="/kura-logo-light-mode.png"
                   alt="Kura"
-                  width={24}
-                  height={24}
+                  width={32}
+                  height={32}
                   className="block dark:hidden object-contain"
                 />
               </div>
