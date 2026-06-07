@@ -26,6 +26,15 @@ export interface TransactionData {
   guardianReport?: GuardianReportData;
   txBytes?: string;
   kuraLoggerPackageId?: string;
+  walrusData?: {
+    intentBlobId: string;
+    reportBlobId: string;
+    intentHash: number[];
+    reportHash: number[];
+    riskLevel: number;
+    slippageBps: number;
+    poolLiqUsd: number;
+  };
 }
 
 export interface Message {

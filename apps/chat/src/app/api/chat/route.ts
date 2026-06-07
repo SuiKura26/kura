@@ -238,7 +238,23 @@ export async function POST(request: NextRequest) {
 
     const base64TxBytes = txBytes ? Buffer.from(txBytes).toString("base64") : undefined;
 
-    // 7. Compose response
+    // 7. Walrus Integration (Store Intent & Report)
+    const { uploadToWalrus } = await import("@/lib/services/walrus");
+    const crypto = await import("crypto");
+    
+    const intentString = JSON.stringify(intent);
+    const reportString = JSON.stringify(guardianReport);
+
+    const intentHash = Array.from(crypto.createHash("sha256").update(intentString).digest());
+    const reportHash = Array.from(crypto.createHash("sha256").update(reportString).digest());
+
+    // Upload to Walrus in parallel
+    const [intentBlobId, reportBlobId] = await Promise.all([
+      uploadToWalrus(intentString),
+      uploadToWalrus(reportString)
+    ]);
+
+    // 8. Compose response
     const transactionData: TransactionData = {
       action: intent.action,
       tokenIn: intent.tokenIn ?? "USDC",
@@ -250,6 +266,15 @@ export async function POST(request: NextRequest) {
       guardianReport,
       txBytes: base64TxBytes,
       kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID,
+      walrusData: (intentBlobId && reportBlobId) ? {
+        intentBlobId,
+        reportBlobId,
+        intentHash,
+        reportHash,
+        riskLevel: guardianReport.riskLevel,
+        slippageBps: guardianReport.slippageBps ?? 0,
+        poolLiqUsd: guardianReport.poolLiqUsd ?? 0,
+      } : undefined
     };
 
     const responseContent =
