@@ -1,0 +1,20 @@
+{
+  "name": "kura",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "pnpm": ">=9.0.0",
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:landing-page": "pnpm --filter @kura/landing-page dev",
+    "dev:chat": "pnpm --filter @kura/chat dev",
+    "build": "pnpm -r build",
+    "build:landing-page": "pnpm --filter @kura/landing-page build",
+    "build:chat": "pnpm --filter @kura/chat build",
+    "start:landing-page": "pnpm --filter @kura/landing-page start",
+    "preview:chat": "pnpm --filter @kura/chat preview",
+    "lint": "pnpm -r lint"
+  }
+}
