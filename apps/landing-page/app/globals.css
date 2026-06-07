@@ -3,17 +3,77 @@
 @theme {
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  --color-bg-base: var(--bg-base);
+  --color-foreground-base: var(--foreground-base);
+  --color-border-base: var(--border-base);
+  --color-border-accent: var(--border-accent);
+  --color-text-muted: var(--text-muted);
+  --color-text-bright: var(--text-bright);
+  --color-card-bg-base: var(--card-bg-base);
+  --color-card-bg-accent: var(--card-bg-accent);
+  --color-btn-primary-bg: var(--btn-primary-bg);
+  --color-btn-primary-text: var(--btn-primary-text);
 }
 
+/* Light mode (default) */
 :root {
+  --background: #ffffff;
+  --foreground: #1c1917;
+
+  --bg-base: #ffffff;
+  --foreground-base: #1c1917;
+  --border-base: #e7e5e4;
+  --border-accent: #d6d3d1;
+  --text-muted: #78716c;
+  --text-bright: #0c0a09;
+  --card-bg-base: #f5f5f4;
+  --card-bg-accent: #e7e5e4;
+  --btn-primary-bg: #0c0a09;
+  --btn-primary-text: #ffffff;
+}
+
+/* Dark mode (system preference) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #e5e2e1;
+
+    --bg-base: #000000;
+    --foreground-base: #e5e2e1;
+    --border-base: #1a1a1a;
+    --border-accent: #2a2a2a;
+    --text-muted: #8a8a8a;
+    --text-bright: #ffffff;
+    --card-bg-base: #0a0a0a;
+    --card-bg-accent: #161616;
+    --btn-primary-bg: #ffffff;
+    --btn-primary-text: #000000;
+  }
+}
+
+/* Support manual or custom .dark class as well */
+.dark {
   --background: #000000;
   --foreground: #e5e2e1;
+
+  --bg-base: #000000;
+  --foreground-base: #e5e2e1;
+  --border-base: #1a1a1a;
+  --border-accent: #2a2a2a;
+  --text-muted: #8a8a8a;
+  --text-bright: #ffffff;
+  --card-bg-base: #0a0a0a;
+  --card-bg-accent: #161616;
+  --btn-primary-bg: #ffffff;
+  --btn-primary-text: #000000;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Utilities mimicking stitch-html styles */
@@ -27,7 +87,7 @@ body {
 }
 
 .thin-border {
-  border: 1px solid #1A1A1A;
+  border: 1px solid var(--border-base);
 }
 
 .terminal-cursor::after {

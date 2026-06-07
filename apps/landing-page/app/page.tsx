@@ -245,7 +245,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-text-bright mb-20 tracking-tight">The Execution Cycle.</h2>
             <div className="relative">
               {/* Progress Line */}
-              <div className="hidden md:block absolute top-[24px] left-0 w-full h-[1px] bg-[#2a2a2a] z-0"></div>
+              <div className="hidden md:block absolute top-[24px] left-0 w-full h-[1px] bg-border-accent z-0"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative z-10">
                 {[
@@ -258,8 +258,8 @@ export default function Home() {
                   <div key={idx} className="group cursor-pointer" onClick={() => setActiveStep(idx)}>
                     <div className={`w-12 h-12 border flex items-center justify-center font-mono text-xs mb-6 rounded-sm transition-all duration-300 ${
                       activeStep === idx 
-                        ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-                        : "bg-black text-text-muted border-border-accent group-hover:border-white"
+                        ? "bg-text-bright text-bg-base border-text-bright shadow-[0_0_15px_rgba(12,10,9,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
+                        : "bg-card-bg-base text-text-muted border-border-accent group-hover:border-text-bright"
                     }`}>
                       {item.step}
                     </div>
@@ -288,8 +288,8 @@ export default function Home() {
                   Type complex multi-protocol intents as easily as a text message.
                 </p>
               </div>
-              <div className="mt-6 p-4 bg-black border border-border-base rounded-sm flex items-center">
-                <span className="font-mono text-xs text-text-muted/60">system: Waiting for user intent...</span>
+              <div className="mt-6 p-4 bg-card-bg-accent border border-border-base rounded-sm flex items-center">
+                <span className="font-mono text-xs text-text-muted">system: Waiting for user intent...</span>
               </div>
             </div>
 
@@ -307,8 +307,8 @@ export default function Home() {
                   <span>SIMULATING BLOCK INDEX</span>
                   <span>100% COMPLETE</span>
                 </div>
-                <div className="h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
-                  <div className="h-full bg-white w-full animate-pulse"></div>
+                <div className="h-1.5 w-full bg-border-accent rounded-full overflow-hidden">
+                  <div className="h-full bg-text-bright w-full animate-pulse"></div>
                 </div>
               </div>
             </div>
@@ -455,17 +455,26 @@ export default function Home() {
       </main>
 
       {/* Footer Component */}
-      <footer className="bg-black border-t border-border-base text-xs text-text-muted">
+      <footer className="bg-bg-base border-t border-border-base text-xs text-text-muted">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 py-16 px-6 md:px-16 max-w-7xl mx-auto">
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <Image 
-                alt="KURA" 
-                className="h-8 w-8 object-contain" 
-                src="/kura-logo-dark-mode.png" 
-                width={32} 
-                height={32} 
-              />
+              <>
+                <Image 
+                  alt="KURA" 
+                  className="h-8 w-8 object-contain hidden dark:block" 
+                  src="/kura-logo-dark-mode.png" 
+                  width={32} 
+                  height={32} 
+                />
+                <Image 
+                  alt="KURA" 
+                  className="h-8 w-8 object-contain block dark:hidden" 
+                  src="/kura-logo-light-mode.png" 
+                  width={32} 
+                  height={32} 
+                />
+              </>
               <span className="text-lg font-bold text-text-bright tracking-tighter">KURA</span>
             </div>
             <p className="max-w-sm leading-relaxed">

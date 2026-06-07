@@ -37,8 +37,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} dark`}>
-      <body className="antialiased bg-black text-[#e5e2e1] min-h-screen font-sans">
+    <html lang="en" className={`${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased bg-bg-base text-foreground-base min-h-screen font-sans">
         {children}
       </body>
     </html>
