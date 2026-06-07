@@ -13,6 +13,10 @@ import type { ChatAPIResponse, TransactionData } from "@/types/chat";
  * Main orchestration endpoint for Kura Chat.
  * Flow: Input → Intent Parse → PTB Build → Dry Run → Guardian → Response
  */
+
+// Disable AI SDK Warnings for "responseFormat is not supported"
+process.env.AI_SDK_LOG_WARNINGS = "false";
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Parse and validate request body
@@ -55,6 +59,7 @@ export async function POST(request: NextRequest) {
     let intent;
     try {
       intent = await parseIntent(messages);
+      console.log("=== DEBUG: Parsed Intent ===", JSON.stringify(intent, null, 2));
     } catch (error) {
       console.error("Intent Parser error:", error);
       return NextResponse.json(
@@ -205,6 +210,7 @@ export async function POST(request: NextRequest) {
     let guardianReport;
     try {
       guardianReport = await analyzeRisk(intent, dryRunResult, marketRate);
+      console.log("=== DEBUG: Guardian Report ===", JSON.stringify(guardianReport, null, 2));
 
     } catch (error) {
       console.error("Guardian AI error:", error);
