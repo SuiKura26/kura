@@ -7,8 +7,30 @@ export interface PTBBuildResult {
   humanReadableSummary: string;
 }
 
-// Known testnet validator for Staking (Mysten Labs Testnet Validator)
-const TESTNET_VALIDATOR = "0x8c6d48227b68677f5255c479fbcc726a4b12e3e9d80d220b33b00021b36bb0fb";
+/**
+ * Dynamically fetches an active validator from the Sui network.
+ * This avoids hardcoding a validator address that may become inactive.
+ */
+async function getActiveValidator(client: any): Promise<{ address: string; name: string }> {
+  try {
+    const systemState = await client.getLatestSuiSystemState();
+    const validators = systemState.activeValidators;
+    if (!validators || validators.length === 0) {
+      throw new Error("No active validators found");
+    }
+    // Pick the validator with the highest voting power for reliability
+    const sorted = [...validators].sort((a: any, b: any) => Number(b.votingPower) - Number(a.votingPower));
+    const best = sorted[0];
+    return { address: best.suiAddress, name: best.name || "Top Validator" };
+  } catch (e) {
+    console.warn("Failed to fetch active validators, using fallback", e);
+    // Fallback: Blockscope.net (known active testnet validator as of June 2026)
+    return {
+      address: "0x44b1b319e23495995fc837dafd28fc6af8b645edddff0fc1467f1ad631362c23",
+      name: "Blockscope.net"
+    };
+  }
+}
 
 export interface RouteInfo {
   protocol: string;
@@ -192,6 +214,10 @@ async function buildStakePTB(
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
 
+  // Dynamically get an active validator from the chain
+  const validator = await getActiveValidator(client);
+  console.log(`=== DEBUG: Staking to validator: ${validator.name} (${validator.address}) ===`);
+
   const steps: TransactionStep[] = [
     {
       id: "step1",
@@ -203,13 +229,13 @@ async function buildStakePTB(
     {
       id: "step2",
       description: {
-        id: `Langkah 2: Mendaftarkan stake ke Validator Mysten Labs`,
-        en: `Step 2: Requesting stake with Mysten Labs Validator`,
+        id: `Langkah 2: Mendaftarkan stake ke Validator ${validator.name}`,
+        en: `Step 2: Requesting stake with ${validator.name} Validator`,
       },
     },
   ];
 
-  // REAL PTB Operations for Staking Simulation
+  // REAL PTB Operations for Staking
   const coinToStake = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
   if (coinToStake) {
     tx.moveCall({
@@ -217,7 +243,7 @@ async function buildStakePTB(
       arguments: [
         tx.object("0x5"), // Sui System State object
         coinToStake,
-        tx.pure.address(TESTNET_VALIDATOR),
+        tx.pure.address(validator.address),
       ],
     });
   }
@@ -225,7 +251,7 @@ async function buildStakePTB(
   return { 
     transaction: tx, 
     steps, 
-    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn} to Mysten Labs Validator` 
+    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn} to ${validator.name} Validator` 
   };
 }
 
