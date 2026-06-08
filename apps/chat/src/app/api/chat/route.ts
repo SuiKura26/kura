@@ -205,8 +205,10 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer)
+        const searchToken = tokenIn;
+
         const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
-        const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
+        const coinInfo = await findCoinInWallet(client as any, senderAddress, searchToken);
 
         if (!coinInfo) {
           return sendResultAndClose({
@@ -237,7 +239,7 @@ export async function POST(request: NextRequest) {
         // 4.5 Auto Routing (Aggregator)
         sendEvent("step", "routing");
         const { buildPTB, findBestSwapRoute } = await import("@/lib/services/ptb-builder");
-        const bestRoute = await findBestSwapRoute(intent, amountInBaseUnits, client as any);
+        const bestRoute = await findBestSwapRoute(intent, amountInBaseUnits, coinInfo.coinType, client as any);
 
         // 5. PTB Builder
         sendEvent("step", "building");
@@ -252,12 +254,13 @@ export async function POST(request: NextRequest) {
 
         // Serialize transaction for frontend execution
         // Using toJSON() BEFORE dryRunTransaction so we don't resolve and lock object versions and gas coins on the server
-        const txJSON = await transaction.toJSON();
+        const txJSON = await transaction.toJSON({ client: client as any });
         const base64TxBytes = Buffer.from(txJSON).toString("base64");
 
         // 5. REAL Dry Run Simulation (on-chain via RPC)
         sendEvent("step", "simulating");
         const dryRunResult = await dryRunTransaction(transaction, senderAddress);
+        console.log("=== DEBUG: Dry Run Result ===", JSON.stringify(dryRunResult, null, 2));
 
         // 6. Agent 2: Guardian AI Analysis
         sendEvent("step", "guardian");

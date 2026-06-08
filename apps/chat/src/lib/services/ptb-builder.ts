@@ -9,8 +9,6 @@ export interface PTBBuildResult {
 
 // Known testnet validator for Staking (Mysten Labs Testnet Validator)
 const TESTNET_VALIDATOR = "0x8c6d48227b68677f5255c479fbcc726a4b12e3e9d80d220b33b00021b36bb0fb";
-// Dummy vault address for swap simulation on testnet
-const TESTNET_VAULT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // burned
 
 export interface RouteInfo {
   protocol: string;
@@ -18,40 +16,29 @@ export interface RouteInfo {
   poolLiqUsd: number;
 }
 
+import { findDeepBookRoute, buildDeepBookSwapPTB } from "./deepbook-swap";
+
 /**
- * AI Auto-Routing: Finds the best DEX pool based on mock simulation
+ * Auto-Routing: Finds the best DEX pool based on DeepBook
  */
 export async function findBestSwapRoute(
   intent: IntentJSON,
   amountBaseUnits: bigint,
+  coinType: string,
   client: any
-): Promise<RouteInfo | null> {
+): Promise<any | null> {
   if (intent.action !== "swap") return null;
+  const tokenIn = intent.tokenIn ?? "SUI";
+  const tokenOut = intent.tokenOut ?? "USDC";
 
-  // Simulate querying multiple DEXes on Testnet
-  const dexes = [
-    { protocol: "cetus", poolLiqUsd: 150000, slippage: 0.005 },
-    { protocol: "turbos", poolLiqUsd: 45000, slippage: 0.012 },
-    { protocol: "flowx", poolLiqUsd: 500, slippage: 0.085 },
-    { protocol: "hop", poolLiqUsd: 80000, slippage: 0.008 }
-  ];
+  // Query DeepBook V3
+  const deepBookRoute = await findDeepBookRoute(tokenIn, tokenOut, coinType);
+  if (deepBookRoute) {
+    return deepBookRoute;
+  }
 
-  // Add some randomness to simulate dynamic market conditions on Testnet
-  const simulatedRoutes = dexes.map(dex => {
-    const randomVariation = (Math.random() * 0.02) - 0.01; // +/- 1%
-    const finalSlippage = Math.max(0.001, dex.slippage + randomVariation);
-    return {
-      protocol: dex.protocol,
-      estimatedOutputPct: 1 - finalSlippage,
-      poolLiqUsd: dex.poolLiqUsd * (1 + randomVariation)
-    };
-  });
-
-  // Sort by highest output (least slippage)
-  simulatedRoutes.sort((a, b) => b.estimatedOutputPct - a.estimatedOutputPct);
-
-  // Return the best route
-  return simulatedRoutes[0];
+  // Fallback to simulated Cetus router
+  return { protocol: "cetus", poolKey: null };
 }
 
 /**
@@ -94,7 +81,7 @@ export async function buildPTB(
   coinType: string,
   amountBaseUnits: bigint,
   client: any,
-  bestRoute?: RouteInfo | null
+  bestRoute?: any | null
 ): Promise<PTBBuildResult> {
   const tx = new Transaction();
   tx.setSender(senderAddress);
@@ -121,13 +108,12 @@ async function buildSwapPTB(
   coinType: string,
   senderAddress: string,
   client: any,
-  bestRoute?: RouteInfo | null
+  bestRoute?: any | null
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
   const tokenOut = intent.tokenOut ?? "USDC";
   
-  // Use best route protocol if available, else fallback
-  const protocol = bestRoute?.protocol ?? intent.protocol ?? "cetus";
+  const protocol = bestRoute?.protocol || "cetus";
 
   // Build human-readable steps
   const steps: TransactionStep[] = [
@@ -154,16 +140,44 @@ async function buildSwapPTB(
     },
   ];
 
-  // REAL PTB Operations for Swap Simulation
+  // Prepare the coin to swap
   const coinToSwap = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
-  if (coinToSwap) {
-    tx.transferObjects([coinToSwap], tx.pure.address(TESTNET_VAULT));
+  
+  if (!coinToSwap) {
+    throw new Error(`Gagal mendapatkan koin ${tokenIn} dari dompet kamu.`);
   }
+
+  // If we have a route from DeepBook, build the actual swap transaction
+  if (bestRoute && bestRoute.poolKey) {
+    try {
+      buildDeepBookSwapPTB(
+        tx,
+        bestRoute,
+        coinToSwap,
+        amountBaseUnits,
+        senderAddress,
+        BigInt(0) // testnet fee
+      );
+      
+      return { 
+        transaction: tx, 
+        steps, 
+        humanReadableSummary: `Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via DeepBook V3` 
+      };
+    } catch (e) {
+      console.warn("DeepBook Swap failed, falling back to sending back to user");
+      // Fallthrough to mock
+    }
+  }
+
+  // Fallback if DeepBook Router fails: just a mock transaction that returns the coin to the user 
+  // so we don't burn testnet tokens.
+  tx.transferObjects([coinToSwap], tx.pure.address(senderAddress));
 
   return { 
     transaction: tx, 
     steps, 
-    humanReadableSummary: `Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via ${protocol}` 
+    humanReadableSummary: `(Simulated) Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via ${protocol}` 
   };
 }
 
