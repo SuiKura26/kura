@@ -4,6 +4,8 @@ import { Message } from "@/types/chat";
 import { TransactionCard } from "./TransactionCard";
 import { Language } from "@/hooks/useChat";
 import Image from "next/image";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageBubbleProps {
   message: Message;
@@ -48,13 +50,27 @@ export function MessageBubble({ message, language, onCancelTransaction }: Messag
         <div className="flex flex-col">
           {message.type === "text" && (
             <div 
-              className={`p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm ${
+              className={`p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm overflow-hidden ${
                 isUser 
                   ? "bg-primary text-primary-foreground rounded-tr-sm" 
                   : "bg-muted text-foreground rounded-tl-sm border"
               }`}
             >
-              {message.content}
+              <ReactMarkdown 
+                remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
+                components={{
+                  p: ({...props}) => <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />,
+                  ul: ({...props}) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                  ol: ({...props}) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                  li: ({...props}) => <li className="mb-1" {...props} />,
+                  a: ({...props}) => <a className="underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                  strong: ({...props}) => <strong className="font-bold" {...props} />,
+                  code: ({...props}) => <code className="bg-black/10 dark:bg-white/10 rounded px-1 py-0.5 text-xs md:text-sm" {...props} />,
+                  pre: ({...props}) => <pre className="bg-black/10 dark:bg-white/10 rounded p-2 md:p-3 my-2 overflow-x-auto text-xs md:text-sm" {...props} />
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
             </div>
           )}
 

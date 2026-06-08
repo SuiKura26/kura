@@ -3,6 +3,8 @@
 import { AlertTriangle, ShieldCheck, ShieldAlert, AlertCircle } from "lucide-react";
 import { GuardianReportData } from "@/types/chat";
 import { Language } from "@/hooks/useChat";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface GuardianReportProps {
   report: GuardianReportData;
@@ -62,9 +64,11 @@ export function GuardianReport({ report, language }: GuardianReportProps) {
         <h4 className={`font-semibold ${config.textColor}`}>{config.title}</h4>
       </div>
       
-      <p className="text-sm text-foreground mb-3">
-        {explanation[language]}
-      </p>
+      <div className="text-sm text-foreground mb-3 [&>p]:mb-2 [&>p:last-child]:mb-0">
+        <ReactMarkdown remarkPlugins={[[remarkGfm, { singleTilde: false }]]}>
+          {explanation[language]}
+        </ReactMarkdown>
+      </div>
 
       <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
         <div className="p-2 rounded bg-background/50">
@@ -81,9 +85,11 @@ export function GuardianReport({ report, language }: GuardianReportProps) {
         </div>
       </div>
 
-      <div className="text-sm text-foreground italic border-t border-border/50 pt-2 mt-2">
+      <div className="text-sm text-foreground italic border-t border-border/50 pt-2 mt-2 [&>p]:inline">
         <strong>{language === "id" ? "Rekomendasi Guardian: " : "Guardian Recommendation: "}</strong>
-        {recommendation[language]}
+        <ReactMarkdown remarkPlugins={[[remarkGfm, { singleTilde: false }]]} components={{ p: ({node, ...props}) => <span {...props} /> }}>
+          {recommendation[language]}
+        </ReactMarkdown>
       </div>
     </div>
   );
