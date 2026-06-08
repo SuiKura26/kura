@@ -204,34 +204,44 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer)
-        const searchToken = tokenIn;
+        // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer, Lend, LP)
+        const requiresInputBalance = ["swap", "stake", "transfer", "lend", "provide_liquidity"].includes(intent.action);
+        let coinInfo: any = null;
+        let amountInBaseUnits = BigInt(0);
 
-        const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
-        const coinInfo = await findCoinInWallet(client as any, senderAddress, searchToken);
+        if (requiresInputBalance) {
+          const searchToken = tokenIn;
 
-        if (!coinInfo) {
-          return sendResultAndClose({
-              role: "assistant",
-              content: language === "en"
-                ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
-                : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
-              type: "text",
-            } );
-        }
+          const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
+          coinInfo = await findCoinInWallet(client as any, senderAddress, searchToken);
 
-        const amountInRaw = intent.amountIn ?? 0;
-        const amountInBaseUnits = BigInt(Math.floor(amountInRaw * (10 ** coinInfo.decimals)));
+          if (!coinInfo) {
+            return sendResultAndClose({
+                role: "assistant",
+                content: language === "en"
+                  ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
+                  : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
+                type: "text",
+              } );
+          }
 
-        if (amountInBaseUnits > coinInfo.totalBalanceBase) {
-          const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
-          return sendResultAndClose({
-              role: "assistant",
-              content: language === "en"
-                ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
-                : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
-              type: "text",
-            } );
+          const amountInRaw = intent.amountIn ?? 0;
+          amountInBaseUnits = BigInt(Math.floor(amountInRaw * (10 ** coinInfo.decimals)));
+
+          if (amountInBaseUnits > coinInfo.totalBalanceBase) {
+            const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
+            return sendResultAndClose({
+                role: "assistant",
+                content: language === "en"
+                  ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
+                  : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
+                type: "text",
+              } );
+          }
+        } else {
+          // For unstake, borrow, remove_liquidity, we don't strictly need input balance check
+          // Just set coinInfo to SUI as a default fallback for coinType parameter
+          coinInfo = { coinType: "0x2::sui::SUI", decimals: 9 };
         }
 
         const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
