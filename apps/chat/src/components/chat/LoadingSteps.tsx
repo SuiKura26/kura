@@ -1,8 +1,9 @@
 "use client";
 
 import { LoadingStep, Language } from "@/hooks/useChat";
-import { CheckCircle2, CircleDashed, Loader2 } from "lucide-react";
+import { CheckCircle2, CircleDashed, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 interface LoadingStepsProps {
   step: LoadingStep;
@@ -10,6 +11,20 @@ interface LoadingStepsProps {
 }
 
 export function LoadingSteps({ step, language }: LoadingStepsProps) {
+  const [isSlow, setIsSlow] = useState(false);
+
+  useEffect(() => {
+    // Reset slow state when step changes
+    setIsSlow(false);
+    
+    // Set a timeout to show "taking longer than usual" message after 15 seconds
+    const timeout = setTimeout(() => {
+      setIsSlow(true);
+    }, 15000);
+
+    return () => clearTimeout(timeout);
+  }, [step]);
+
   if (!step) return null;
 
   const t = {
@@ -19,6 +34,7 @@ export function LoadingSteps({ step, language }: LoadingStepsProps) {
       building: "Meracik transaksi...",
       simulating: "Menyimulasikan transaksi...",
       guardian: "Mengecek risiko dengan Guardian...",
+      slow: "Memproses lebih lama dari biasanya...",
     },
     en: {
       parsing: "Parsing your request...",
@@ -26,10 +42,11 @@ export function LoadingSteps({ step, language }: LoadingStepsProps) {
       building: "Building transaction...",
       simulating: "Simulating transaction...",
       guardian: "Checking risks with Guardian...",
+      slow: "Taking longer than usual to process...",
     }
   };
 
-  const currentLabel = t[language][step as keyof typeof t["id"]];
+  const currentLabel = isSlow ? t[language].slow : t[language][step as keyof typeof t["id"]];
 
   return (
     <div className="flex w-full mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300 justify-start">
@@ -56,9 +73,13 @@ export function LoadingSteps({ step, language }: LoadingStepsProps) {
 
         {/* Content */}
         <div className="flex flex-col">
-          <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-xl border text-sm text-foreground">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            <span className="text-muted-foreground font-medium animate-pulse">{currentLabel}</span>
+          <div className={`flex items-center space-x-3 p-3 rounded-xl border text-sm text-foreground transition-colors duration-500 ${isSlow ? 'bg-amber-500/10 border-amber-500/20' : 'bg-muted/30'}`}>
+            {isSlow ? (
+              <AlertCircle className="w-4 h-4 text-amber-500 animate-pulse" />
+            ) : (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            )}
+            <span className={`font-medium animate-pulse ${isSlow ? 'text-amber-500/90' : 'text-muted-foreground'}`}>{currentLabel}</span>
           </div>
         </div>
       </div>

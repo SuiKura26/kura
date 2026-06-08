@@ -43,6 +43,7 @@ RULES:
 8. Default protocol to "cetus" for swaps if not specified
 9. For transfer, try to extract recipient address if provided.
 10. Understand both Bahasa Indonesia and English
+11. For check_balance: If user asks for balance of all tokens or general wallet balance without specifying a token (e.g. "cek saldo wallet saya", "what's in my wallet?"), DO NOT include tokenIn. Only include tokenIn if user asks about a specific token.
 
 EXAMPLES:
 User: "Tukar 100 USDC ke SUI"
@@ -50,6 +51,9 @@ User: "Tukar 100 USDC ke SUI"
 
 User: "Apa itu staking USDC?"
 → {"action":"chat","response":"Staking USDC adalah proses mengunci USDC Anda di protokol tertentu untuk mendapatkan bunga."}
+
+User: "Cek saldo wallet saya"
+→ {"action":"check_balance"}
 
 User: "Berapa saldo SUI saya?"
 → {"action":"check_balance","tokenIn":"SUI"}
