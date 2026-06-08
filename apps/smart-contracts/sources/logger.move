@@ -148,4 +148,49 @@ module kura::logger {
 
         transfer::public_share_object(log);
     }
+
+    #[test_only]
+    public fun get_report_intent_blob_id(report: &GuardianReport): &String {
+        &report.intent_blob_id
+    }
+
+    #[test_only]
+    public fun get_report_report_blob_id(report: &GuardianReport): &String {
+        &report.report_blob_id
+    }
+
+    #[test_only]
+    public fun get_report_confirmed(report: &GuardianReport): bool {
+        report.confirmed
+    }
+
+    #[test_only]
+    public fun get_report_user_address(report: &GuardianReport): address {
+        report.user_address
+    }
+
+    #[test_only]
+    public fun get_report_risk_level(report: &GuardianReport): u8 {
+        report.risk_level
+    }
+
+    #[test_only]
+    public fun get_log_guardian_report_id(log: &ExecutionLog): ID {
+        log.guardian_report_id
+    }
+
+    #[test_only]
+    public fun get_log_user_address(log: &ExecutionLog): address {
+        log.user_address
+    }
+
+    #[test_only]
+    public fun get_log_tx_digest(log: &ExecutionLog): &vector<u8> {
+        &log.tx_digest
+    }
+
+    #[test_only]
+    public fun get_log_success(log: &ExecutionLog): bool {
+        log.success
+    }
 }
