@@ -801,4 +801,23 @@ Frontend perlu menyiapkan:
 - Deploy Date: 07 Juni 2026
 - Explorer: https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
 
+---
+
+### 17.7 Kesimpulan Perubahan & Penyesuaian Integrasi (Juni 2026)
+
+**Ringkasan Perubahan pada Smart Contract (logger.move & Move.toml)**:
+1. **Perbaikan Konfigurasi Alamat (`Move.toml`)**: Konfigurasi nama alamat di dalam `Move.toml` telah diperbaiki menjadi `kura = "0x0"` untuk mensinkronisasikan penamaan namespace modul dengan kode sumber `logger.move` (menyelesaikan error kompilasi `E03001`).
+2. **Penyediaan Getter Helper (`logger.move`)**: Menambahkan serangkaian fungsi pembaca (getter) beranotasi `#[test_only]` agar unit test eksternal dapat melakukan asersi terhadap properti internal struct `GuardianReport` dan `ExecutionLog` tanpa mengubah fungsionalitas produksi.
+3. **Penyusunan & Validasi Security Test Suite**: Membuat file pengujian komprehensif `apps/smart-contracts/tests/security_tests.move` yang berisi 17 kasus uji (mencakup kontrol akses, integritas status, validasi input, kepemilikan objek, emisi event, dan integritas bidang Walrus). Seluruh pengujian ini berhasil lulus dengan status `17/17 passed`.
+4. **Pembersihan Lingkungan Repositori**: Menghapus file pengujian lokal serta file log hasil test dari branch utama guna menjaga codebase produksi tetap bersih, lalu meng-commit dan mendorong perubahan ke branch `Smart-Contract`.
+
+**Penyesuaian Integrasi (Bagaimana Backend dan Frontend Mengubahnya)**:
+* **Backend**:
+  * **Penyelarasan Address Binding**: Backend harus menggunakan nama alamat `kura` (bukan `kura_logger`) saat berinteraksi dengan API atau membangun Transaction Block.
+  * **Pengiriman Parameter ke Entry Point**: Panggilan on-chain ke `emit_guardian_report` dan `log_execution` disesuaikan dengan skema parameter yang menyertakan pointer referensi Walrus blob (`intent_blob_id` dan `report_blob_id`).
+* **Frontend**:
+  * **Proses Konfirmasi On-Chain**: Saat pengguna memberikan persetujuan eksplisit, frontend memicu modul tanda tangan dompet (`signAndExecuteTransactionBlock`) untuk memanggil fungsi entry `confirm_intent` pada objek laporan Guardian terkait secara on-chain.
+  * **Verifikasi Data Konten**: Frontend mengambil `intent_blob_id` dan `report_blob_id` dari objek laporan di blockchain, kemudian melakukan query ke Walrus aggregator untuk mengambil file mentah dan memverifikasinya terhadap data hash.
+
+
 
