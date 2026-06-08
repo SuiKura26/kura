@@ -7,7 +7,7 @@ import type { DryRunResult, GuardianReportData, IntentJSON } from "@/types/chat"
 const guardianReportSchema = z.object({
   riskLevel: z.number().min(0).max(3),
   slippageBps: z.number().min(0),
-  poolLiqUsd: z.number().min(0),
+  poolLiqUsd: z.number().min(0).nullable(),
   explanation: z.object({
     id: z.string(),
     en: z.string(),
@@ -90,7 +90,7 @@ export async function analyzeRisk(
   let calculatedSlippageBps = 0;
   let calculatedSlippagePct = 0;
 
-  if (marketRate && marketRate > 0) {
+  if (marketRate && marketRate > 0 && intent.action === "swap") {
     expectedOutput = amountIn * marketRate;
     if (expectedOutput > 0) {
       calculatedSlippagePct = ((expectedOutput - estimatedOutput) / expectedOutput) * 100;
@@ -98,18 +98,22 @@ export async function analyzeRisk(
     }
   }
 
+  const isSwap = intent.action === "swap";
+
   const userPrompt = `Analyze this DeFi transaction:
 - Action: ${intent.action}
 - Token In: ${intent.tokenIn ?? "unknown"} (amount: ${amountIn})
 - Token Out: ${intent.tokenOut ?? "unknown"}
-${marketRate ? `- Market Rate (CoinGecko): 1 ${intent.tokenIn} = ${marketRate} ${intent.tokenOut}
+${isSwap ? (marketRate ? `- Market Rate (CoinGecko): 1 ${intent.tokenIn} = ${marketRate} ${intent.tokenOut}
 - Expected Output at Market Rate: ${expectedOutput} ${intent.tokenOut}
-- Calculated Slippage: ${calculatedSlippagePct.toFixed(2)}% (${calculatedSlippageBps} bps)` : "- Market Rate: Unavailable"}
+- Calculated Slippage: ${calculatedSlippagePct.toFixed(2)}% (${calculatedSlippageBps} bps)` : "- Market Rate: Unavailable") : "- Action is not swap, slippage is exactly 0% (0 bps) and must be ignored."}
 - Estimated Output from Dry Run: ${estimatedOutput} ${intent.tokenOut}
 - Gas Used: ${dryRunResult.gasUsed} SUI
 - Dry Run Success: ${dryRunResult.success}
 ${dryRunResult.error ? `- Dry Run Error: ${dryRunResult.error}` : ""}
 - Balance Changes: ${JSON.stringify(dryRunResult.balanceChanges)}
+
+CRITICAL INSTRUCTION FOR NON-SWAP ACTIONS: If the Action is NOT "swap" (e.g. "transfer", "stake", "unstake"), you MUST IGNORE slippage and expected output. Do NOT treat an output of 0 as a 100% loss. If the Dry Run is successful, the transaction is safe (riskLevel 0).
 
 Based on the data above, produce a Guardian risk report with risk level, slippage in bps, estimated pool liquidity, explanation, and recommendation.`;
 

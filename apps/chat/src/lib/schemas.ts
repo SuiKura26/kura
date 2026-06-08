@@ -17,6 +17,7 @@ export const intentSchema = z.object({
     "check_balance",
     "check_price",
     "clarify",
+    "chat",
   ]),
   tokenIn: z.string().optional(),
   tokenOut: z.string().optional(),
@@ -26,6 +27,7 @@ export const intentSchema = z.object({
   slippageTolerance: z.number().min(0).max(100).optional(),
   recipient: z.string().optional(),
   reason: z.string().optional(), // only for action === 'clarify'
+  response: z.string().optional(), // only for action === 'chat'
 });
 
 export type IntentSchemaType = z.infer<typeof intentSchema>;

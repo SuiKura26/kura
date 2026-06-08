@@ -8,14 +8,20 @@ import { Menu } from "lucide-react";
 
 export function ChatLayout() {
   const {
+    sessions,
+    activeSessionId,
     messages,
     loadingStep,
     language,
     toggleLanguage,
     sendMessage,
-    clearChat,
+    createNewSession,
+    switchSession,
+    deleteSession,
+    cancelTransaction,
     isSidebarOpen,
     setIsSidebarOpen,
+    isWalletConnected,
   } = useChat();
 
   return (
@@ -23,7 +29,11 @@ export function ChatLayout() {
       <Sidebar
         language={language}
         toggleLanguage={toggleLanguage}
-        onNewChat={clearChat}
+        onNewChat={createNewSession}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        switchSession={switchSession}
+        deleteSession={deleteSession}
         isMobileOpen={isSidebarOpen}
         setIsMobileOpen={setIsSidebarOpen}
       />
@@ -46,6 +56,7 @@ export function ChatLayout() {
           loadingStep={loadingStep}
           language={language}
           onSuggestionClick={sendMessage}
+          onCancelTransaction={cancelTransaction}
         />
 
         {/* Input Area */}
@@ -54,6 +65,7 @@ export function ChatLayout() {
             language={language}
             onSend={sendMessage}
             disabled={loadingStep !== null}
+            isWalletConnected={isWalletConnected}
           />
           <div className="text-center mt-2 text-[10px] md:text-xs text-muted-foreground/70">
             {language === "id"

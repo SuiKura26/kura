@@ -5,22 +5,30 @@ import { Check, X, Info } from "lucide-react";
 import { TransactionData } from "@/types/chat";
 import { Language } from "@/hooks/useChat";
 import { GuardianReport } from "./GuardianReport";
-import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { useSignAndExecuteTransaction, useSuiClient, useCurrentAccount } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
 interface TransactionCardProps {
   data: TransactionData;
   language: Language;
+  onCancel?: () => void;
 }
 
-export function TransactionCard({ data, language }: TransactionCardProps) {
+export function TransactionCard({ data, language, onCancel }: TransactionCardProps) {
   const [confirmed, setConfirmed] = useState(false);
-  const [executed, setExecuted] = useState(false);
+  const [localIsCancelled, setLocalIsCancelled] = useState(false);
+  const [executionStep, setExecutionStep] = useState(0); // 0: initial, 1: report, 2: main tx, 3: log, 4: done
   const [txDigest, setTxDigest] = useState("");
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [typedConfirmation, setTypedConfirmation] = useState("");
   
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const suiClient = useSuiClient();
+  const account = useCurrentAccount();
+
+  const executeTx = (tx: Transaction) => new Promise<any>((resolve, reject) => {
+    signAndExecuteTransaction({ transaction: tx }, { onSuccess: resolve, onError: reject });
+  });
 
   const t = {
     id: {
@@ -36,6 +44,9 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
       viewExplorer: "Lihat di Explorer",
       ackRisk: "Saya mengerti risiko ini",
       typeConfirm: "Ketik KONFIRMASI untuk melanjutkan",
+      step1: "Langkah 1/3: Menyimpan Laporan AI...",
+      step2: "Langkah 2/3: Menyetujui & Mengeksekusi...",
+      step3: "Langkah 3/3: Mencatat Hasil Transaksi...",
     },
     en: {
       action: "Action",
@@ -50,6 +61,9 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
       viewExplorer: "View in Explorer",
       ackRisk: "I understand this risk",
       typeConfirm: "Type CONFIRM to proceed",
+      step1: "Step 1/3: Saving AI Report...",
+      step2: "Step 2/3: Approving & Executing...",
+      step3: "Step 3/3: Logging Result...",
     }
   };
 
@@ -64,81 +78,145 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
     canExecute = typedConfirmation === keyword;
   }
 
-  const handleExecute = () => {
-    if (canExecute && data.txBytes) {
-      setConfirmed(true);
+  const handleExecute = async () => {
+    if (!canExecute || !data.txBytes || !data.walrusData || !data.kuraLoggerPackageId) {
+      if (!data.txBytes) alert(language === "id" ? "Data transaksi tidak valid." : "Invalid transaction data.");
+      if (!data.walrusData) alert("Walrus data missing");
+      return;
+    }
+
+    if (!account) {
+      alert("Please connect your wallet");
+      return;
+    }
+
+    setConfirmed(true);
+    const walrus = data.walrusData;
+
+    try {
+      // ----------------------------------------------------
+      // STEP 1: Emit Guardian Report
+      // ----------------------------------------------------
+      setExecutionStep(1);
+      const reportTx = new Transaction();
       
-      try {
-        const txBytes = Uint8Array.from(Buffer.from(data.txBytes, 'base64'));
-        const transaction = Transaction.from(txBytes);
+      reportTx.moveCall({
+        target: `${data.kuraLoggerPackageId}::logger::emit_guardian_report`,
+        arguments: [
+          reportTx.pure.address(account.address),
+          reportTx.pure.vector('u8', walrus.intentHash),
+          reportTx.pure.u8(walrus.riskLevel),
+          reportTx.pure.u64(walrus.slippageBps),
+          reportTx.pure.u64(walrus.poolLiqUsd ?? 0),
+          reportTx.pure.vector('u8', walrus.reportHash),
+          reportTx.pure.string(walrus.intentBlobId),
+          reportTx.pure.string(walrus.reportBlobId),
+          reportTx.pure.u64(Date.now()),
+        ]
+      });
 
-        signAndExecuteTransaction(
-          {
-            transaction,
-          },
-          {
-            onSuccess: (result) => {
-              const digest = result.digest;
-              
-              if (data.kuraLoggerPackageId) {
-                // Phase 2: Execute KuraLogger on-chain log
-                try {
-                  const logTx = new Transaction();
-                  // Using an empty/generic object to represent the logger state for MVP
-                  // Usually there is a shared logger object. Assuming 0x6 for demonstration.
-                  logTx.moveCall({
-                    target: `${data.kuraLoggerPackageId}::kura_logger::record_transaction`,
-                    arguments: [
-                      // Sender address (implicit in Move, but PRD says to store it, so we pass it if required)
-                      // Risk level (0-3)
-                      logTx.pure.u8(riskLevel),
-                      // Original Digest
-                      logTx.pure.string(digest),
-                    ],
-                  });
+      const step1Result = await executeTx(reportTx);
+      
+      // Fetch events to get the report_id
+      const txResult = await suiClient.waitForTransaction({
+        digest: step1Result.digest,
+        options: { showEvents: true }
+      });
 
-                  signAndExecuteTransaction(
-                    { transaction: logTx },
-                    {
-                      onSuccess: () => {
-                        setTxDigest(digest);
-                        setExecuted(true);
-                      },
-                      onError: (e) => {
-                        console.error("Logger execution failed", e);
-                        // Still mark original tx as successful
-                        setTxDigest(digest);
-                        setExecuted(true);
-                      }
-                    }
-                  );
-                } catch (e) {
-                  console.error("Failed to build logger tx", e);
-                  setTxDigest(digest);
-                  setExecuted(true);
-                }
-              } else {
-                setTxDigest(digest);
-                setExecuted(true);
-              }
-            },
-            onError: (error) => {
-              console.error("Execution failed", error);
-              setConfirmed(false);
-              alert(language === "id" ? "Transaksi gagal atau dibatalkan." : "Transaction failed or cancelled.");
-            },
-          }
-        );
-      } catch (e) {
-        console.error("Failed to deserialize transaction", e);
-        setConfirmed(false);
-      }
-    } else if (!data.txBytes) {
-      alert(language === "id" ? "Data transaksi tidak valid." : "Invalid transaction data.");
+      const event = txResult.events?.find(e => e.type.includes("::logger::GuardianReportCreatedEvent"));
+      if (!event) throw new Error("Report creation event not found");
+      const reportId = (event.parsedJson as any).report_id;
+
+      // Get initial shared version
+      const objData = await suiClient.getObject({ id: reportId, options: { showOwner: true } });
+      const initialSharedVersion = (objData.data?.owner as any)?.Shared?.initial_shared_version;
+      if (!initialSharedVersion) throw new Error("Could not find initial shared version for report");
+
+      // ----------------------------------------------------
+      // STEP 2: Main Execution (Swap/Stake) + Confirm Intent
+      // ----------------------------------------------------
+      setExecutionStep(2);
+      const mainTxStr = Buffer.from(data.txBytes, 'base64').toString('utf8');
+      const mainTx = Transaction.from(mainTxStr);
+
+      // Append confirm_intent
+      mainTx.moveCall({
+        target: `${data.kuraLoggerPackageId}::logger::confirm_intent`,
+        arguments: [
+          mainTx.sharedObjectRef({
+            objectId: reportId,
+            initialSharedVersion,
+            mutable: true
+          }),
+          mainTx.pure.u64(Date.now())
+        ]
+      });
+
+      const step2Result = await executeTx(mainTx);
+      const mainDigest = step2Result.digest;
+
+      // ----------------------------------------------------
+      // STEP 3: Log Execution
+      // ----------------------------------------------------
+      setExecutionStep(3);
+      
+      const bs58 = (await import('bs58')).default;
+      const digestBytes = Array.from(bs58.decode(mainDigest));
+      
+      const logTx = new Transaction();
+      logTx.moveCall({
+        target: `${data.kuraLoggerPackageId}::logger::log_execution`,
+        arguments: [
+          logTx.sharedObjectRef({
+            objectId: reportId,
+            initialSharedVersion,
+            mutable: false // read-only reference for logging
+          }),
+          logTx.pure.vector('u8', digestBytes),
+          logTx.pure.u64(Date.now()), // confirmed_at (approx)
+          logTx.pure.u64(Date.now()), // executed_at
+          logTx.pure.bool(true) // success
+        ]
+      });
+
+      await executeTx(logTx);
+
+      setTxDigest(mainDigest);
+      setExecutionStep(4);
+
+    } catch (e) {
+      console.error(e);
+      setConfirmed(false);
+      setExecutionStep(0);
+      alert(language === "id" ? "Transaksi gagal atau dibatalkan." : "Transaction failed or cancelled.");
     }
   };
 
-  if (executed) {
+  const isCancelled = data.isCancelled || localIsCancelled;
+
+  const handleCancel = () => {
+    setLocalIsCancelled(true);
+    if (onCancel) onCancel();
+  };
+
+  if (isCancelled) {
+    return (
+      <div className="w-full max-w-sm rounded-xl border border-red-500/20 bg-card p-4 shadow-sm opacity-60">
+        <div className="flex flex-col items-center justify-center space-y-2 py-2 text-center">
+          <div className="rounded-full bg-red-500/10 p-2">
+            <X className="h-5 w-5 text-red-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-red-500">
+              {language === "id" ? "Transaksi Dibatalkan" : "Transaction Cancelled"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (executionStep === 4) {
     return (
       <div className="w-full max-w-sm rounded-xl border bg-card p-4 shadow-sm animate-in zoom-in-95">
         <div className="flex flex-col items-center justify-center space-y-3 py-6 text-center">
@@ -173,13 +251,29 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
           </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-lg sm:text-2xl font-bold tracking-tight">
-            {data.amountIn} {data.tokenIn} <span className="text-muted-foreground font-normal">→</span> {data.tokenOut}
-          </span>
-          <span className="text-sm text-muted-foreground flex items-center mt-1">
-            <Info className="w-3 h-3 mr-1 inline" />
-            {text.estOutput}: ≈{data.estimatedOutput} {data.tokenOut}
-          </span>
+          {data.action === "swap" ? (
+            <>
+              <span className="text-lg sm:text-2xl font-bold tracking-tight">
+                {data.amountIn} {data.tokenIn} <span className="text-muted-foreground font-normal">→</span> {data.tokenOut}
+              </span>
+              <span className="text-sm text-muted-foreground flex items-center mt-1">
+                <Info className="w-3 h-3 mr-1 inline" />
+                {text.estOutput}: ≈{data.estimatedOutput} {data.tokenOut}
+              </span>
+            </>
+          ) : data.action === "transfer" ? (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              {language === "id" ? "Kirim" : "Transfer"} {data.amountIn} {data.tokenIn}
+            </span>
+          ) : data.action === "stake" ? (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              Stake {data.amountIn} {data.tokenIn}
+            </span>
+          ) : (
+            <span className="text-lg sm:text-2xl font-bold tracking-tight capitalize">
+              {data.action} {data.amountIn} {data.tokenIn}
+            </span>
+          )}
         </div>
       </div>
 
@@ -210,10 +304,12 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
           <span className="text-muted-foreground">{text.gasFee}</span>
           <span className="font-mono">{data.gasEstimate} SUI</span>
         </div>
-        <div className="flex justify-between text-sm font-medium pt-1 border-t mt-2">
-          <span>{text.netOutput}</span>
-          <span className="font-mono text-primary">≈{data.estimatedOutput} {data.tokenOut}</span>
-        </div>
+        {data.action === "swap" && (
+          <div className="flex justify-between text-sm font-medium pt-1 border-t mt-2">
+            <span>{text.netOutput}</span>
+            <span className="font-mono text-primary">≈{data.estimatedOutput} {data.tokenOut}</span>
+          </div>
+        )}
       </div>
 
       {/* Guardian Report */}
@@ -253,21 +349,28 @@ export function TransactionCard({ data, language }: TransactionCardProps) {
 
       {/* Actions */}
       <div className="p-4 flex gap-3">
-        <button className="flex-1 px-4 py-2 rounded-lg border border-input bg-background hover:bg-accent text-sm font-medium transition-colors">
+        <button 
+          onClick={handleCancel}
+          disabled={confirmed}
+          className="flex-1 px-4 py-2 rounded-lg border border-input bg-background hover:bg-accent text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {text.cancelBtn}
         </button>
         <button 
           onClick={handleExecute}
           disabled={!canExecute || confirmed}
           className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            !canExecute 
+            !canExecute || confirmed
               ? 'bg-muted text-muted-foreground cursor-not-allowed' 
               : riskLevel === 3 
                 ? 'bg-red-500 text-white hover:bg-red-600'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'
           }`}
         >
-          {confirmed ? (language === "id" ? "Memproses..." : "Processing...") : text.confirmBtn}
+          {executionStep === 1 ? text.step1 :
+           executionStep === 2 ? text.step2 :
+           executionStep === 3 ? text.step3 :
+           text.confirmBtn}
         </button>
       </div>
     </div>

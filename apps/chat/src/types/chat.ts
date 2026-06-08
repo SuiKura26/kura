@@ -10,7 +10,7 @@ export interface TransactionStep {
 export interface GuardianReportData {
   riskLevel: 0 | 1 | 2 | 3; // 0=Rendah, 1=Sedang, 2=Tinggi, 3=Kritis
   slippageBps: number;
-  poolLiqUsd: number;
+  poolLiqUsd: number | null;
   explanation: Record<"id" | "en", string>;
   recommendation: Record<"id" | "en", string>;
 }
@@ -26,6 +26,16 @@ export interface TransactionData {
   guardianReport?: GuardianReportData;
   txBytes?: string;
   kuraLoggerPackageId?: string;
+  walrusData?: {
+    intentBlobId: string;
+    reportBlobId: string;
+    intentHash: number[];
+    reportHash: number[];
+    riskLevel: number;
+    slippageBps: number;
+    poolLiqUsd: number;
+  };
+  isCancelled?: boolean;
 }
 
 export interface Message {
@@ -42,6 +52,7 @@ export interface ChatSession {
   title: string;
   messages: Message[];
   createdAt: number;
+  updatedAt: number;
 }
 
 // ============================================================
@@ -59,7 +70,8 @@ export type IntentAction =
   | "transfer"
   | "check_balance"
   | "check_price"
-  | "clarify";
+  | "clarify"
+  | "chat";
 
 export interface IntentJSON {
   action: IntentAction;
@@ -71,6 +83,7 @@ export interface IntentJSON {
   slippageTolerance?: number;
   recipient?: string;
   reason?: string; // only for action === 'clarify'
+  response?: string; // only for action === 'chat'
 }
 
 export interface DryRunResult {

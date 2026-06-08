@@ -8,9 +8,10 @@ import Image from "next/image";
 interface MessageBubbleProps {
   message: Message;
   language: Language;
+  onCancelTransaction?: (id: string) => void;
 }
 
-export function MessageBubble({ message, language }: MessageBubbleProps) {
+export function MessageBubble({ message, language, onCancelTransaction }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
@@ -62,7 +63,11 @@ export function MessageBubble({ message, language }: MessageBubbleProps) {
               <div className="p-3 md:p-4 rounded-2xl text-sm md:text-base shadow-sm bg-muted text-foreground rounded-tl-sm border w-fit">
                 {message.content}
               </div>
-              <TransactionCard data={message.transactionData} language={language} />
+              <TransactionCard 
+                data={message.transactionData} 
+                language={language} 
+                onCancel={() => onCancelTransaction?.(message.id)}
+              />
             </div>
           )}
 

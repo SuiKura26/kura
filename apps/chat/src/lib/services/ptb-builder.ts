@@ -12,6 +12,48 @@ const TESTNET_VALIDATOR = "0x8c6d48227b68677f5255c479fbcc726a4b12e3e9d80d220b33b
 // Dummy vault address for swap simulation on testnet
 const TESTNET_VAULT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // burned
 
+export interface RouteInfo {
+  protocol: string;
+  estimatedOutputPct: number; // e.g. 0.99 for 99%
+  poolLiqUsd: number;
+}
+
+/**
+ * AI Auto-Routing: Finds the best DEX pool based on mock simulation
+ */
+export async function findBestSwapRoute(
+  intent: IntentJSON,
+  amountBaseUnits: bigint,
+  client: any
+): Promise<RouteInfo | null> {
+  if (intent.action !== "swap") return null;
+
+  // Simulate querying multiple DEXes on Testnet
+  const dexes = [
+    { protocol: "cetus", poolLiqUsd: 150000, slippage: 0.005 },
+    { protocol: "turbos", poolLiqUsd: 45000, slippage: 0.012 },
+    { protocol: "flowx", poolLiqUsd: 500, slippage: 0.085 },
+    { protocol: "hop", poolLiqUsd: 80000, slippage: 0.008 }
+  ];
+
+  // Add some randomness to simulate dynamic market conditions on Testnet
+  const simulatedRoutes = dexes.map(dex => {
+    const randomVariation = (Math.random() * 0.02) - 0.01; // +/- 1%
+    const finalSlippage = Math.max(0.001, dex.slippage + randomVariation);
+    return {
+      protocol: dex.protocol,
+      estimatedOutputPct: 1 - finalSlippage,
+      poolLiqUsd: dex.poolLiqUsd * (1 + randomVariation)
+    };
+  });
+
+  // Sort by highest output (least slippage)
+  simulatedRoutes.sort((a, b) => b.estimatedOutputPct - a.estimatedOutputPct);
+
+  // Return the best route
+  return simulatedRoutes[0];
+}
+
 /**
  * Helper to fetch, merge, and split coins dynamically
  */
@@ -51,7 +93,8 @@ export async function buildPTB(
   senderAddress: string,
   coinType: string,
   amountBaseUnits: bigint,
-  client: any
+  client: any,
+  bestRoute?: RouteInfo | null
 ): Promise<PTBBuildResult> {
   const tx = new Transaction();
   tx.setSender(senderAddress);
@@ -60,7 +103,7 @@ export async function buildPTB(
 
   switch (intent.action) {
     case "swap":
-      return buildSwapPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+      return buildSwapPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, bestRoute);
     case "stake":
       return buildStakePTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
     case "transfer":
@@ -77,11 +120,14 @@ async function buildSwapPTB(
   amountBaseUnits: bigint,
   coinType: string,
   senderAddress: string,
-  client: any
+  client: any,
+  bestRoute?: RouteInfo | null
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
   const tokenOut = intent.tokenOut ?? "USDC";
-  const protocol = intent.protocol ?? "cetus";
+  
+  // Use best route protocol if available, else fallback
+  const protocol = bestRoute?.protocol ?? intent.protocol ?? "cetus";
 
   // Build human-readable steps
   const steps: TransactionStep[] = [
@@ -149,25 +195,23 @@ async function buildStakePTB(
     },
   ];
 
-  // Native Staking only works with SUI.
-  if (coinType === "0x2::sui::SUI") {
-    const stakeCoin = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
-    if (stakeCoin) {
-      tx.moveCall({
-        target: "0x3::sui_system::request_add_stake",
-        arguments: [
-          tx.object("0x5"), // SuiSystemState
-          stakeCoin,
-          tx.pure.address(TESTNET_VALIDATOR),
-        ],
-      });
-    }
+  // REAL PTB Operations for Staking Simulation
+  const coinToStake = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (coinToStake) {
+    tx.moveCall({
+      target: "0x3::sui_system::request_add_stake",
+      arguments: [
+        tx.object("0x5"), // Sui System State object
+        coinToStake,
+        tx.pure.address(TESTNET_VALIDATOR),
+      ],
+    });
   }
 
-  return {
-    transaction: tx,
-    steps,
-    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn}`,
+  return { 
+    transaction: tx, 
+    steps, 
+    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn} to Mysten Labs Validator` 
   };
 }
 
@@ -181,55 +225,52 @@ async function buildTransferPTB(
   client: any
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
-  const recipient = intent.recipient ?? "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const toAddress = intent.recipient ?? "Unknown Address";
 
   const steps: TransactionStep[] = [
     {
       id: "step1",
       description: {
-        id: `Langkah 1: Memisahkan ${amountInRaw} ${tokenIn} untuk dikirim`,
-        en: `Step 1: Splitting ${amountInRaw} ${tokenIn} for transfer`,
+        id: `Langkah 1: Memisahkan ${amountInRaw} ${tokenIn} dari saldo utama`,
+        en: `Step 1: Splitting ${amountInRaw} ${tokenIn} from main balance`,
       },
     },
     {
       id: "step2",
       description: {
-        id: `Langkah 2: Mengirim ke alamat tujuan`,
-        en: `Step 2: Transferring to recipient address`,
+        id: `Langkah 2: Mengirim ke ${toAddress}`,
+        en: `Step 2: Sending to ${toAddress}`,
       },
     },
   ];
 
   const coinToTransfer = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
   if (coinToTransfer) {
-    tx.transferObjects([coinToTransfer], tx.pure.address(recipient));
+    tx.transferObjects([coinToTransfer], tx.pure.address(toAddress));
   }
 
-  return {
-    transaction: tx,
-    steps,
-    humanReadableSummary: `Transfer ${amountInRaw} ${tokenIn} to ${recipient.slice(0, 6)}...${recipient.slice(-4)}`,
+  return { 
+    transaction: tx, 
+    steps, 
+    humanReadableSummary: `Transfer ${amountInRaw} ${tokenIn} to ${toAddress}` 
   };
 }
 
-function buildGenericPTB(
+async function buildGenericPTB(
   tx: Transaction,
   intent: IntentJSON
-): PTBBuildResult {
-  const steps: TransactionStep[] = [
-    {
-      id: "step1",
-      description: {
-        id: `Langkah 1: Menyiapkan operasi ${intent.action}`,
-        en: `Step 1: Preparing ${intent.action} operation`,
-      },
-    },
-  ];
-
+): Promise<PTBBuildResult> {
   return {
     transaction: tx,
-    steps,
-    humanReadableSummary: `${intent.action} operation`,
+    steps: [
+      {
+        id: "step1",
+        description: {
+          id: `Menyiapkan transaksi untuk ${intent.action}`,
+          en: `Preparing transaction for ${intent.action}`,
+        },
+      },
+    ],
+    humanReadableSummary: `Execute ${intent.action}`,
   };
 }
-
