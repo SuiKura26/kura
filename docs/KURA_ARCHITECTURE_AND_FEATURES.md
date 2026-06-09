@@ -1,7 +1,7 @@
 # Kura Chat — Technical Architecture & Full Documentation 🐢💬
 
 ## 1. Overview
-**Kura Chat** is an innovative, dual-agent conversational AI built for the Sui blockchain ecosystem. It bridges the gap between natural language processing and complex decentralized finance (DeFi) interactions. Users can interact with DeFi protocols (swap, stake, transfer) simply by conversing with Kura in Bahasa Indonesia or English.
+**Kura Chat** is an innovative, dual-agent conversational AI built for the Sui blockchain ecosystem. It bridges the gap between natural language processing and complex decentralized finance (DeFi) interactions. Users can interact with DeFi protocols — swap, stake, unstake, lend, borrow, provide/remove liquidity, transfer, check balance, and check price — simply by conversing with Kura in Bahasa Indonesia or English.
 
 ---
 
@@ -12,7 +12,7 @@ The core intelligence of Kura Chat relies on two distinct AI Agents with special
 ### Agent 1: The Intent Parser (The PM)
 - **Role:** Translates messy, unstructured human language into a strict, validated JSON intent schema.
 - **Capabilities:**
-  - Extracts parameters: `action` (swap, transfer, stake, chat, clarify), `tokenIn`, `tokenOut`, `amountIn` (absolute or percentage), and `recipient`.
+  - Extracts parameters: `action` (swap, stake, unstake, lend, borrow, provide_liquidity, remove_liquidity, transfer, check_balance, check_price, chat, clarify), `tokenIn`, `tokenOut`, `amountIn` (absolute or percentage), and `recipient`.
   - Handles conversational fallbacks (`action: "chat"`) when users ask general questions (e.g., "Siapa namamu?", "Apa itu staking?").
   - Identity injected: Recognizes itself as **"Kura"**, the intelligent DeFi assistant.
 - **Location:** `apps/chat/src/lib/agents/intent-parser.ts`
@@ -23,7 +23,7 @@ The core intelligence of Kura Chat relies on two distinct AI Agents with special
   - Compares the simulated token output against real market rates (via Aggregator/CoinGecko APIs).
   - Calculates exact **Slippage** in Basis Points (bps).
   - Assigns a **Risk Level** (0: Low, 1: Medium, 2: High, 3: Critical) based on slippage limits and pool liquidity.
-  - **Dynamic Exemption:** Automatically ignores slippage and output checks for non-swap transactions (like `transfer` or `stake`) to prevent false-positive "Critical Risk" hallucinations.
+  - **Dynamic Exemption:** Automatically ignores slippage and output checks for non-swap transactions (like `transfer`, `stake`, `unstake`, `lend`, `borrow`, `provide_liquidity`, `remove_liquidity`) to prevent false-positive "Critical Risk" hallucinations.
   - Generates bilingual explanations and safety recommendations.
 - **Location:** `apps/chat/src/lib/agents/guardian.ts`
 
@@ -39,9 +39,13 @@ The system processes requests in a multi-stage pipeline designed for security an
 2. **Dynamic Token & Balance Validation (`wallet-scanner.ts`)**
    - The system checks the connected wallet's Sui RPC to ensure the user actually possesses the requested `tokenIn`.
    - Validates if the user's balance covers the `amountIn`.
+   - **Smart Input Validation:** Actions that don't require an input balance (e.g., `unstake`, `borrow`, `remove_liquidity`) automatically bypass this check to prevent false-positive errors.
 
 3. **Smart Routing & Quote Gathering (`ptb-builder.ts`)**
-   - If the action is a `swap`, the system queries aggregators (e.g., Cetus API) to find the most optimal trading route and expected output amount.
+   - If the action is a `swap`, the system queries DeepBook V3 to find the most optimal trading route and expected output amount.
+   - For `lend`/`borrow`, the system routes through Scallop Protocol.
+   - For `provide_liquidity`/`remove_liquidity`, the system routes through Cetus AMM.
+   - For `stake`/`unstake`, the system uses native Sui System State calls with dynamic validator selection.
 
 4. **PTB Construction (Unsigned)**
    - The server constructs a **Programmatic Transaction Block (PTB)** using the `@mysten/sui` SDK.
@@ -78,16 +82,38 @@ The system processes requests in a multi-stage pipeline designed for security an
 
 ## 5. Technology Stack
 
-- **Framework:** Next.js 14+ (App Router, Turbopack)
+- **Framework:** Next.js 16+ (App Router, Turbopack)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS & Lucide Icons
 - **Blockchain SDK:** `@mysten/sui/client`, `@mysten/sui/transactions`, `@mysten/dapp-kit`
+- **DEX Integration:** `@mysten/deepbook-v3` (DeepBook V3 CLOB DEX)
+- **Lending Protocol:** `@scallop-io/sui-scallop-sdk` (Scallop Lending/Borrowing)
+- **AMM Protocol:** `@cetusprotocol/cetus-sui-clmm-sdk` (Cetus Concentrated Liquidity)
 - **AI Processing:** OpenAI-Compatible SDK (`@ai-sdk/openai-compatible`, `generateObject`) pointing to custom models (e.g., `sumopod`).
 - **Decentralized Storage:** Walrus Publisher Network
 
 ---
 
-## 6. Future Roadmap / Expansion
-- Add support for lending and borrowing protocols (e.g., Scallop, Navi).
+## 6. Supported DeFi Actions
+
+| # | Action | Protocol | Status |
+|---|--------|----------|--------|
+| 1 | `swap` | DeepBook V3 (fallback: Cetus) | ✅ Live |
+| 2 | `stake` | Sui Native (`0x3::sui_system`) | ✅ Live (Dynamic Validator) |
+| 3 | `unstake` | Sui Native (`request_withdraw_stake`) | ✅ Live |
+| 4 | `lend` | Scallop Protocol | ✅ Live |
+| 5 | `borrow` | Scallop Protocol | ✅ Live |
+| 6 | `provide_liquidity` | Cetus AMM | ✅ Live |
+| 7 | `remove_liquidity` | Cetus AMM | ✅ Live |
+| 8 | `transfer` | Sui Native | ✅ Live |
+| 9 | `check_balance` | Sui RPC (all tokens) | ✅ Live |
+| 10 | `check_price` | Price Oracle (CoinGecko) | ✅ Live |
+
+---
+
+## 7. Future Roadmap / Expansion
 - Implement multi-signature (multisig) support for DAO treasury management.
 - Introduce continuous real-time market data websockets for Guardian AI.
+- Add advanced Scallop features (obligation management, collateral optimization).
+- Implement full Cetus CLMM position management with tick-range selection.
+- Multi-chain expansion beyond Sui ecosystem.
