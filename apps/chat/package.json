@@ -14,6 +14,7 @@
     "@mysten/dapp-kit": "^1.0.6",
     "@mysten/deepbook-v3": "^1.4.1",
     "@mysten/sui": "^2.17.0",
+    "@scallop-io/sui-scallop-sdk": "3.0.2",
     "@tanstack/react-query": "^5.101.0",
     "ai": "^6.0.197",
     "bignumber.js": "^11.1.3",
