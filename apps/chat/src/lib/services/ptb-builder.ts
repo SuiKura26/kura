@@ -115,8 +115,18 @@ export async function buildPTB(
       return buildSwapPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, bestRoute);
     case "stake":
       return buildStakePTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "unstake":
+      return buildUnstakePTB(tx, intent, amountInRaw, senderAddress, client);
     case "transfer":
       return buildTransferPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "lend":
+      return buildLendPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "borrow":
+      return buildBorrowPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "provide_liquidity":
+      return buildProvideLiquidityPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "remove_liquidity":
+      return buildRemoveLiquidityPTB(tx, intent, amountInRaw, senderAddress, client);
     default:
       return buildGenericPTB(tx, intent);
   }
@@ -255,6 +265,61 @@ async function buildStakePTB(
   };
 }
 
+async function buildUnstakePTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const tokenIn = intent.tokenIn ?? "SUI";
+
+  const steps: TransactionStep[] = [
+    {
+      id: "step1",
+      description: {
+        id: `Langkah 1: Mengambil data StakedSui di wallet Anda`,
+        en: `Step 1: Fetching StakedSui objects in your wallet`,
+      },
+    },
+    {
+      id: "step2",
+      description: {
+        id: `Langkah 2: Meminta pencairan SUI dari validator`,
+        en: `Step 2: Requesting SUI withdrawal from validator`,
+      },
+    },
+  ];
+
+  // Fetch staked SUI objects
+  const stakedObjects = await client.getOwnedObjects({
+    owner: senderAddress,
+    filter: { StructType: "0x3::staking_pool::StakedSui" },
+    options: { showContent: true }
+  });
+
+  if (!stakedObjects.data || stakedObjects.data.length === 0) {
+    throw new Error("Tidak ditemukan Staked SUI di wallet Anda.");
+  }
+
+  // Just pick the first one for simplicity, or we could aggregate if needed
+  const stakedObjId = stakedObjects.data[0].data.objectId;
+
+  tx.moveCall({
+    target: "0x3::sui_system::request_withdraw_stake",
+    arguments: [
+      tx.object("0x5"), // Sui System State object
+      tx.object(stakedObjId)
+    ],
+  });
+
+  return {
+    transaction: tx,
+    steps,
+    humanReadableSummary: `Unstake SUI (Akan tersedia setelah epoch berakhir)`
+  };
+}
+
 async function buildTransferPTB(
   tx: Transaction,
   intent: IntentJSON,
@@ -294,6 +359,64 @@ async function buildTransferPTB(
     steps, 
     humanReadableSummary: `Transfer ${amountInRaw} ${tokenIn} to ${toAddress}` 
   };
+}
+
+import { buildScallopLendPTB, buildScallopBorrowPTB } from "./scallop-integration";
+
+async function buildLendPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const coinToLend = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (!coinToLend) {
+    throw new Error(`Gagal mendapatkan koin ${intent.tokenIn} dari dompet Anda.`);
+  }
+  return buildScallopLendPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, coinToLend);
+}
+
+async function buildBorrowPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  return buildScallopBorrowPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+}
+
+import { buildCetusProvideLiquidityPTB, buildCetusRemoveLiquidityPTB } from "./cetus-integration";
+
+async function buildProvideLiquidityPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const coinToProvide = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (!coinToProvide) {
+    throw new Error(`Gagal mendapatkan koin ${intent.tokenIn} dari dompet Anda.`);
+  }
+  return buildCetusProvideLiquidityPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, coinToProvide);
+}
+
+async function buildRemoveLiquidityPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  return buildCetusRemoveLiquidityPTB(tx, intent, amountInRaw, senderAddress, client);
 }
 
 async function buildGenericPTB(
