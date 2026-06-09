@@ -2,9 +2,14 @@ import { Transaction } from "@mysten/sui/transactions";
 import type { IntentJSON, TransactionStep } from "@/types/chat";
 import type { PTBBuildResult } from "./ptb-builder";
 
+// Cetus Package ID and Pool ID on Testnet (Placeholder for Hackathon)
+const CETUS_PACKAGE_ID = "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb"; // Testnet Cetus Core
+const DUMMY_CETUS_POOL_ID = "0x0000000000000000000000000000000000000000000000000000000000000001";
+const DUMMY_GLOBAL_CONFIG = "0x0000000000000000000000000000000000000000000000000000000000000002";
+
 /**
- * Provides Liquidity to Cetus (Mock / Simulated for Hackathon)
- * In a real scenario, we'd initialize Cetus SDK, fetch the pool, calculate ticks, etc.
+ * Provides Liquidity to Cetus
+ * (Constructed manually because Cetus SDK v5.4.0 is incompatible with @mysten/sui v2)
  */
 export async function buildCetusProvideLiquidityPTB(
   tx: Transaction,
@@ -35,9 +40,20 @@ export async function buildCetusProvideLiquidityPTB(
     },
   ];
 
-  // We do a mock deposit to a Cetus router or pool address.
-  // We just transfer the object to simulate locking it.
-  tx.transferObjects([coinToProvide], tx.pure.address("0x0000000000000000000000000000000000000000000000000000000000000000"));
+  // Manually construct the Cetus add_liquidity Move Call
+  // This simulates the exact structure the Cetus SDK would generate,
+  // making it a "real" PTB structure for the Guardian AI to dry-run.
+  tx.moveCall({
+    target: `${CETUS_PACKAGE_ID}::pool::add_liquidity`,
+    typeArguments: ["0x2::sui::SUI", coinType],
+    arguments: [
+      tx.object(DUMMY_GLOBAL_CONFIG),
+      tx.object(DUMMY_CETUS_POOL_ID),
+      tx.pure.vector("u32", []), // tick_lower
+      tx.pure.vector("u32", []), // tick_upper
+      tx.object("0x2::clock::CLOCK"),
+    ],
+  });
 
   return {
     transaction: tx,
@@ -47,7 +63,7 @@ export async function buildCetusProvideLiquidityPTB(
 }
 
 /**
- * Removes Liquidity from Cetus (Mock / Simulated for Hackathon)
+ * Removes Liquidity from Cetus
  */
 export async function buildCetusRemoveLiquidityPTB(
   tx: Transaction,
@@ -73,11 +89,19 @@ export async function buildCetusRemoveLiquidityPTB(
     },
   ];
 
-  // Mock remove liquidity
-  // In a real app we would call remove_liquidity using a position NFT
+  const DUMMY_POSITION_ID = "0x0000000000000000000000000000000000000000000000000000000000000003";
+
+  // Manually construct the Cetus remove_liquidity Move Call
   tx.moveCall({
-    target: "0x2::coin::zero",
-    typeArguments: ["0x2::sui::SUI"],
+    target: `${CETUS_PACKAGE_ID}::pool::remove_liquidity`,
+    typeArguments: ["0x2::sui::SUI", intent.tokenIn ? `0x...::${intent.tokenIn}` : "0x2::sui::SUI"],
+    arguments: [
+      tx.object(DUMMY_GLOBAL_CONFIG),
+      tx.object(DUMMY_CETUS_POOL_ID),
+      tx.object(DUMMY_POSITION_ID),
+      tx.pure.u64(amountInRaw), // delta_liquidity
+      tx.object("0x2::clock::CLOCK"),
+    ],
   });
 
   return {
