@@ -1,12 +1,6 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { ScallopBuilder } from "@scallop-io/sui-scallop-sdk";
 import type { IntentJSON, TransactionStep } from "@/types/chat";
 import type { PTBBuildResult } from "./ptb-builder";
-
-// Initialize ScallopBuilder for testnet
-const builder = new ScallopBuilder({
-  networkType: "testnet",
-});
 
 /**
  * Lends/Supplies tokens to Scallop
