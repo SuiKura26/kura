@@ -14,7 +14,7 @@
   <p align="center">
     <a href="https://kura.ai"><img src="https://img.shields.io/badge/Landing%20Page-kura.ai-6F4FF2?style=flat-square" alt="Landing Page"></a>
     <a href="https://chat.kura.ai"><img src="https://img.shields.io/badge/Chat%20App-chat.kura.ai-6F4FF2?style=flat-square" alt="Chat App"></a>
-    <a href="https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064"><img src="https://img.shields.io/badge/Sui%20Testnet-Deployed-4F9EFF?style=flat-square" alt="Sui Testnet"></a>
+    <a href="https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"><img src="https://img.shields.io/badge/Sui%20Mainnet-Deployed-4F9EFF?style=flat-square" alt="Sui Mainnet"></a>
     <br/>
     <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js 16">
     <img src="https://img.shields.io/badge/Sui%20Move-2024-4F9EFF?style=flat-square&logo=sui" alt="Sui Move">
@@ -37,7 +37,7 @@ flowchart LR
     D --> E["🛡️ Agent 2: Guardian AI"]
     E --> F["📋 Transaction Card + Risk Report"]
     F --> G["✅ User Confirms & Signs"]
-    G --> H["⚡ Execute on Sui Testnet"]
+    G --> H["⚡ Execute on Sui Mainnet"]
     H --> I["📦 Walrus + On-Chain Log"]
 ```
 
@@ -50,7 +50,7 @@ flowchart LR
 | **🧠 Dual-Agent AI** | Two specialized AI agents: Intent Parser (understands you) + Guardian (protects you) |
 | **🛡️ Guardian Layer** | No blind signing. Every transaction gets a pre-execution risk analysis with human-readable reports |
 | **🔬 Real On-Chain Simulation** | Uses Sui's `dryRunTransactionBlock` for accurate off-chain simulation — zero gas cost |
-| **🗺️ Smart Routing** | Auto-routes swaps via DeepBook V3 aggregator for best prices |
+| **🗺️ Smart Routing** | Auto-routes swaps via DeepBook V3 mainnet pools for best prices |
 | **📜 Immutable Audit Trail** | Every intent & report stored on Walrus + verified on-chain via KuraLogger Move contract |
 | **🌏 Bilingual** | Full support for **Bahasa Indonesia** and **English** |
 | **🔐 Privacy-First** | Chat sessions auto-clear on wallet disconnect. Keys never leave your device |
@@ -126,7 +126,7 @@ flowchart LR
 <tr>
 <td>10</td>
 <td><strong>Check Price</strong></td>
-<td>Price Oracle</td>
+<td>CoinGecko Oracle</td>
 <td><code>Berapa harga SUI?</code></td>
 </tr>
 </tbody>
@@ -156,15 +156,15 @@ flowchart LR
 │   (LLM → JSON)       │  │  (@mysten/sui)   │  │   (LLM Risk Analysis)    │
 │                      │  │  DeepBook V3     │  │                          │
 │                      │  │  Scallop SDK     │  │   Slippage Detection     │
-│                      │  │  Cetus SDK       │  │   Pool Liquidity Check   │
+│                      │  │  Cetus AMM       │  │   Pool Liquidity Check   │
 └──────────────────────┘  └──────────────────┘  └──────────────────────────┘
 ═══════════════════════════════════════════════════════════════════════════════
                                         │ emit_log() via PTB
                                         ▼
 ═══════════════════════════════════════════════════════════════════════════════
-                         BLOCKCHAIN LAYER (Sui Testnet)
+                         BLOCKCHAIN LAYER (Sui Mainnet)
 ┌────────────────────────────┐  ┌──────────────────┐  ┌────────────────────┐
-│   KuraLogger Contract      │  │ Sui Testnet RPC  │  │  DeFi Protocols    │
+│   KuraLogger Contract      │  │ Sui Mainnet RPC  │  │  DeFi Protocols    │
 │   (Move Module)            │  │                  │  │                    │
 │   • GuardianReport         │◀─▶ • dryRun         │◀─▶ • DeepBook V3     │
 │   • ExecutionLog           │  │ • execute        │  │ • Scallop          │
@@ -199,7 +199,7 @@ flowchart LR
 ## 🛡️ Guardian AI Risk Levels
 
 | Level | Label | Condition | UX |
-|-------|-------|-----------|----|
+|-------|-------|-----------|-----|
 | 0 | 🟢 **Low** | Slippage < 1%, Liquidity > $100K | Direct execution |
 | 1 | 🟡 **Medium** | Slippage 1-3%, Liquidity $10K-$100K | Warning shown |
 | 2 | 🟠 **High** | Slippage 3-5%, Liquidity $1K-$10K | Checkbox acknowledgment required |
@@ -209,11 +209,11 @@ flowchart LR
 
 ## 📦 Smart Contract: KuraLogger
 
-Deployed on **Sui Testnet** — immutable on-chain audit trail for every transaction.
+Deployed on **Sui Mainnet** — immutable on-chain audit trail for every transaction.
 
 ```
-Package ID: 0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
-Explorer:   https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
+Package ID: 0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20
+Explorer:   https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20
 ```
 
 ### Entry Functions
@@ -245,17 +245,16 @@ User Intent  ──→  GuardianReport Object (risk_level, slippage, blob refs)
 | **Tailwind CSS v4** | Utility-first styling |
 | **shadcn/ui + Base UI** | Component primitives |
 | **Lucide Icons** | Icon system |
-| **Framer Motion** | Transaction card animations |
 | **React Markdown** | Guardian report rendering |
 
 ### Blockchain & DeFi
 | Technology | Purpose |
 |------------|---------|
-| **Sui Blockchain** | Layer-1 blockchain (Testnet) |
-| **@mysten/sui** | Sui TypeScript SDK |
+| **Sui Blockchain** | Layer-1 blockchain (**Mainnet**) |
+| **@mysten/sui v2** | Sui TypeScript SDK |
 | **@mysten/dapp-kit** | Wallet integration (extension + zkLogin) |
-| **DeepBook V3** | CLOB DEX for swaps |
-| **Scallop** | Lending & borrowing protocol |
+| **@mysten/deepbook-v3** | DeepBook V3 CLOB DEX (mainnet pools & coins) |
+| **@scallop-io/sui-scallop-sdk** | Lending & borrowing protocol |
 | **Cetus AMM** | Concentrated liquidity AMM |
 | **Sui Move** | Smart contract language |
 
@@ -266,13 +265,14 @@ User Intent  ──→  GuardianReport Object (risk_level, slippage, blob refs)
 | **OpenAI-compatible API** | Intent Parser + Guardian agents |
 | **Zod v4** | Schema validation |
 | **Walrus** | Decentralized blob storage |
+| **CoinGecko API** | Real-time price oracle |
 
 ### Infrastructure
 | Technology | Purpose |
 |------------|---------|
 | **Vercel** | Hosting (chat + landing page) |
 | **pnpm workspaces** | Monorepo management |
-| **Sui Testnet RPC** | Blockchain interaction |
+| **Sui Mainnet RPC** | Blockchain interaction |
 
 ---
 
@@ -281,13 +281,15 @@ User Intent  ──→  GuardianReport Object (risk_level, slippage, blob refs)
 ### Prerequisites
 - **Node.js** ≥ 20
 - **pnpm** ≥ 9
-- **Sui Wallet** (extension) connected to **Testnet**
+- **Sui Wallet** (extension) connected to **Mainnet**
 - **AI API key** (OpenAI-compatible endpoint)
 
 ### Setup
 
 ```bash
 # 1. Clone & install
+git clone https://github.com/SuiKura26/kura.git
+cd kura
 pnpm install
 
 # 2. Set environment variables (apps/chat/.env.local)
@@ -295,12 +297,15 @@ cat > apps/chat/.env.local << EOF
 AI_BASE_URL="https://api.your-ai-provider.com/v1"
 AI_API_KEY="sk-your-key-here"
 AI_MODEL="your-model-name"
-NEXT_PUBLIC_NETWORK="testnet"
-KURA_LOGGER_PACKAGE_ID="0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064"
+NEXT_PUBLIC_SUI_NETWORK="mainnet"
+SUI_RPC_URL="https://fullnode.mainnet.sui.io:443"
+KURA_LOGGER_PACKAGE_ID="0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"
+NEXT_PUBLIC_KURA_LOGGER_PACKAGE_ID="0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"
+COINGECKO_API_KEY="your-coingecko-api-key"
 EOF
 
 # 3. Start development
-pnpm --filter @kura/chat dev
+pnpm dev:chat
 
 # 4. Open http://localhost:3000
 ```
@@ -314,28 +319,57 @@ kura/
 ├── apps/
 │   ├── chat/                      # 🤖 Main chat application
 │   │   ├── src/
-│   │   │   ├── app/api/chat/      # Core API route (orchestration)
+│   │   │   ├── app/
+│   │   │   │   ├── api/chat/      # Core API route (orchestration)
+│   │   │   │   ├── layout.tsx     # Root layout with providers
+│   │   │   │   └── page.tsx       # Main chat page
+│   │   │   ├── components/
+│   │   │   │   ├── chat/          # Chat UI components
+│   │   │   │   │   ├── ChatArea.tsx
+│   │   │   │   │   ├── ChatInput.tsx
+│   │   │   │   │   ├── GuardianReport.tsx
+│   │   │   │   │   ├── LoadingSteps.tsx
+│   │   │   │   │   ├── MessageBubble.tsx
+│   │   │   │   │   ├── TransactionCard.tsx
+│   │   │   │   │   └── WelcomeScreen.tsx
+│   │   │   │   ├── layout/        # Layout components (sidebar, header)
+│   │   │   │   ├── ui/            # shadcn/ui primitives
+│   │   │   │   ├── sui-provider.tsx
+│   │   │   │   └── theme-provider.tsx
+│   │   │   ├── data/              # Static data & configurations
+│   │   │   ├── hooks/
+│   │   │   │   └── useChat.ts     # Chat state management
 │   │   │   ├── lib/
-│   │   │   │   ├── agents/        # Intent Parser + Guardian AI
-│   │   │   │   ├── services/      # PTB Builder, DeepBook, Scallop, Cetus, Dry Run, Walrus
+│   │   │   │   ├── agents/
+│   │   │   │   │   ├── intent-parser.ts   # Agent 1: NLP → IntentJSON
+│   │   │   │   │   └── guardian.ts        # Agent 2: Risk analysis
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── ptb-builder.ts     # PTB construction (all actions)
+│   │   │   │   │   ├── deepbook-swap.ts   # DeepBook V3 mainnet swap
+│   │   │   │   │   ├── scallop-integration.ts  # Scallop lend/borrow
+│   │   │   │   │   ├── cetus-integration.ts    # Cetus LP add/remove
+│   │   │   │   │   ├── dry-run.ts         # On-chain simulation
+│   │   │   │   │   ├── wallet-scanner.ts  # Balance & portfolio check
+│   │   │   │   │   ├── price-oracle.ts    # CoinGecko price feeds
+│   │   │   │   │   └── walrus.ts          # Walrus blob storage
 │   │   │   │   └── schemas.ts     # Zod validation schemas
-│   │   │   ├── components/chat/   # Chat UI, TransactionCard, GuardianReport
-│   │   │   ├── hooks/             # useChat state management
 │   │   │   └── types/             # TypeScript definitions
-│   │   └── public/                # Static assets
+│   │   └── public/                # Static assets (logos, icons)
 │   ├── landing-page/              # 🌐 Marketing site (kura.ai)
 │   │   └── src/                   # Next.js 16 app
 │   └── smart-contracts/           # 📜 KuraLogger Move module
-│       ├── sources/               # Move source code
-│       └── Move.toml              # Package manifest
-├── docs/                          # Documentation
-│   ├── PRD.md                     # Product Requirements Document
-│   ├── KURA_ARCHITECTURE.md       # Technical architecture
-│   ├── DEPLOYMENT_REPORT.md       # Deployment status
-│   └── INTEGRATION_STATUS.md      # Integration checklist
-├── env/                           # Shared env files
+│       ├── sources/
+│       │   └── logger.move        # Move smart contract source
+│       ├── tests/
+│       │   └── security_tests.move  # 17 security test cases (all passed)
+│       ├── Move.toml              # Package manifest (mainnet framework)
+│       └── Published.toml         # Published package info
+├── docs/
+│   └── PRD.md                     # Product Requirements Document
+├── env/
+│   └── .env.production            # Production environment config
 ├── package.json                   # Root workspace config
-├── pnpm-workspace.yaml            # Monorepo config
+├── pnpm-workspace.yaml            # Monorepo config (apps/*)
 └── pnpm-lock.yaml                 # Lockfile
 ```
 
@@ -349,6 +383,7 @@ kura/
 - **Immutable Audit Trail** — On-chain KuraLogger contract stores every report & execution permanently
 - **Rate Limited** — 30 req/min per IP on `/api/chat`
 - **Auto-Clear Privacy** — Sessions wipe on wallet disconnect
+- **Credential Protection** — `.gitignore` configured to block all `.env`, `.key`, `.pem`, and `.private` files
 
 ---
 
@@ -357,10 +392,6 @@ kura/
 | Document | Description |
 |----------|-------------|
 | [`docs/PRD.md`](docs/PRD.md) | Full Product Requirements Document (Bahasa Indonesia) |
-| [`docs/KURA_ARCHITECTURE_AND_FEATURES.md`](docs/KURA_ARCHITECTURE_AND_FEATURES.md) | Technical architecture deep-dive |
-| [`docs/DEPLOYMENT_REPORT.md`](docs/DEPLOYMENT_REPORT.md) | Live deployment status |
-| [`docs/INTEGRATION_STATUS.md`](docs/INTEGRATION_STATUS.md) | Integration checklist & resolution log |
-| [`apps/chat/README.md`](apps/chat/README.md) | Chat app-specific setup guide |
 
 ---
 
@@ -372,6 +403,7 @@ kura/
 | `pnpm dev:chat` | Run chat app only |
 | `pnpm dev:landing-page` | Run landing page only |
 | `pnpm build:chat` | Build chat app for production |
+| `pnpm build` | Build all apps |
 | `pnpm lint` | Run linters across all apps |
 
 ---
@@ -382,7 +414,7 @@ kura/
 |----------|-----|
 | **Chat App** | [https://chat.kura.ai](https://chat.kura.ai) |
 | **Landing Page** | [https://kura.ai](https://kura.ai) |
-| **Smart Contract** | [Sui Testnet Explorer](https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064) |
+| **Smart Contract** | [Sui Mainnet Explorer](https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20) |
 
 ---
 
