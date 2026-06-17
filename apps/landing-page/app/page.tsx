@@ -21,7 +21,7 @@ import {
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
-  const chatAppUrl = process.env.NEXT_PUBLIC_CHAT_APP_URL || "http://localhost:5173";
+  const chatAppUrl = process.env.NEXT_PUBLIC_CHAT_APP_URL || "https://kura-chat.vercel.app/";
   const [logoPositions, setLogoPositions] = useState<{
     sui: { top: string; left: string; size: string; rotate: string };
     walrus: { top: string; left: string; size: string; rotate: string };
