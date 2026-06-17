@@ -1,9 +1,6 @@
 packages:
   - "apps/*"
 allowBuilds:
-<<<<<<< HEAD
   msw: true
-=======
->>>>>>> origin/main
   sharp: true
   unrs-resolver: true
