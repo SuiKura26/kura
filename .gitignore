@@ -95,11 +95,13 @@ test_results.txt
 # Exclude specific sensitive addresses from code/configs if any are stored locally
 
 # ===========================
-# Documentation Files (Only PRD.md allowed to be pushed)
+# Documentation Files (Only PRD.md and README.md allowed to be pushed)
 # ===========================
 # Ignore all markdown files across the repository
 **/*.md
 *.md
-# Add exception for PRD.md
+# Add exceptions for essential documentation
 !docs/PRD.md
+!README.md
+!apps/*/README.md
 
