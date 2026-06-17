@@ -808,10 +808,16 @@ Frontend perlu menyiapkan:
 ---
 
 ### 17.6 Deployment Info
-- Network: Sui Testnet
-- Package ID: 0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
-- Deploy Date: 07 Juni 2026
-- Explorer: https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064
+* **Sui Testnet**:
+  - Package ID: `0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064`
+  - Deploy Date: 07 Juni 2026
+  - Explorer: [SuiScan Testnet](https://suiscan.xyz/testnet/object/0x3f22e83811b5e2c5069f0b51aeb2701ae534daade21592a377810581c6c0c064)
+* **Sui Mainnet**:
+  - Package ID: `0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20`
+  - UpgradeCap: `0xebe2c2a47e3c47cffa73d644d8cfeb5e4ee968eaa6a51717a79e0dcd624f741f`
+  - Tx Digest: `ArfnQzoRjNrEgSuwcQ5aeM37bd6PXDgExsxVuBWurB3K`
+  - Deploy Date: 17 Juni 2026
+  - Explorer: [SuiScan Mainnet](https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20)
 
 ---
 
@@ -831,5 +837,25 @@ Frontend perlu menyiapkan:
   * **Proses Konfirmasi On-Chain**: Saat pengguna memberikan persetujuan eksplisit, frontend memicu modul tanda tangan dompet (`signAndExecuteTransactionBlock`) untuk memanggil fungsi entry `confirm_intent` pada objek laporan Guardian terkait secara on-chain.
   * **Verifikasi Data Konten**: Frontend mengambil `intent_blob_id` dan `report_blob_id` dari objek laporan di blockchain, kemudian melakukan query ke Walrus aggregator untuk mengambil file mentah dan memverifikasinya terhadap data hash.
 
+---
 
+### 17.8 Deployment Mainnet & Konfigurasi Jaringan (17 Juni 2026)
 
+Pada tanggal 17 Juni 2026, smart contract KuraLogger resmi dipublikasikan ke Sui Mainnet. Berikut adalah perubahan operasional dan penyesuaian konfigurasi yang dilakukan untuk mendukung peluncuran Mainnet:
+
+1. **Migrasi Konfigurasi Environment**:
+   - Seluruh file `.env` (root dan `apps/chat/.env`) telah diperbarui dengan mengubah nilai placeholder `BELUM_DIPUBLISH_KE_MAINNET` ke Package ID mainnet yang valid (`0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20`).
+   - Jaringan landing page (`apps/landing-page/.env`) telah dialihkan dari `testnet` ke `mainnet` dengan memperbarui Package ID ke mainnet.
+   - File konfigurasi produksi (`env/.env.production`) telah ditambahkan konfigurasi jaringan Sui Mainnet dan Package ID yang sesuai agar siap untuk pipeline deployment production.
+
+2. **Mitigasi Keamanan Swap Vault (Peringatan Kritis)**:
+
+> [!WARNING]
+> **Swap Vault Address**
+> Mekanisme swap saat ini menggunakan skema simulasi dengan mentransfer aset sementara ke alamat vault. Pada jaringan **Sui Mainnet**, parameter `SUI_SWAP_VAULT_ADDRESS` **wajib** dikonfigurasi dengan hati-hati. 
+> - Jangan biarkan alamat vault statis simulasi digunakan untuk transaksi mainnet riil, karena dapat menyebabkan aset pengguna terkunci secara permanen atau hilang.
+> - Untuk rilis ke publik, pastikan modul swap diintegrasikan langsung dengan SDK Aggregator resmi (seperti Cetus Router API / Cetus SDK) untuk mengeksekusi swap real-time di pool likuiditas mainnet.
+
+3. **Keamanan Kode & Pencegahan Kebocoran Kredensial**:
+   - File `.gitignore` telah dikonfigurasi secara ketat untuk memblokir semua file `.env`, file `.key`, file `.pem`, file sertifikat, dan file berakhiran `.private` yang berisi kredensial atau alamat wallet sensitif milik developer.
+   - Sesuai dengan instruksi retensi data, seluruh file dokumentasi internal (`INTEGRATION_STATUS.md`, `DEPLOYMENT_REPORT.md`, dll.) telah dihapus dari pelacakan Git (`git rm --cached`) dan diabaikan secara permanen agar tidak di-push ke GitHub. **Hanya `docs/PRD.md`** yang disetujui sebagai file dokumentasi resmi yang boleh dipublikasikan di repositori.

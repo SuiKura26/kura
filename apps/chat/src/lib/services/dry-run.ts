@@ -3,8 +3,9 @@ import { Transaction } from "@mysten/sui/transactions";
 import type { DryRunResult } from "@/types/chat";
 
 function getSuiClient(): SuiJsonRpcClient {
-  const rpcUrl = process.env.SUI_RPC_URL || "https://fullnode.testnet.sui.io:443";
-  return new SuiJsonRpcClient({ url: rpcUrl, network: "testnet" });
+  const rpcUrl = process.env.SUI_RPC_URL || "https://fullnode.mainnet.sui.io:443";
+  const network = (process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet") as any;
+  return new SuiJsonRpcClient({ url: rpcUrl, network });
 }
 
 /**

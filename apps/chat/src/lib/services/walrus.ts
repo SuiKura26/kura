@@ -1,6 +1,7 @@
 export async function uploadToWalrus(content: string): Promise<string | null> {
   try {
-    const response = await fetch("https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=5", {
+    const publisherUrl = process.env.WALRUS_PUBLISHER_URL || "https://publisher.walrus-testnet.walrus.space";
+    const response = await fetch(`${publisherUrl}/v1/blobs?epochs=5`, {
       method: "PUT",
       body: content,
     });

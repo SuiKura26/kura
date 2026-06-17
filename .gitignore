@@ -71,3 +71,35 @@ deploy_result.json
 test_results.json
 test_results.txt
 
+# ===========================
+# Sensitive Files and Credentials (Prevention of Data Leaks)
+# ===========================
+.env
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+# Private keys, keystores, wallet files, and secure parameters
+*.key
+*.pem
+*.p12
+*.keystore
+*secret*
+*credentials*
+*address*
+*deployer*
+*wallet*
+*config*.private
+# Exclude specific sensitive addresses from code/configs if any are stored locally
+
+# ===========================
+# Documentation Files (Only PRD.md allowed to be pushed)
+# ===========================
+# Ignore all markdown files across the repository
+**/*.md
+*.md
+# Add exception for PRD.md
+!docs/PRD.md
+

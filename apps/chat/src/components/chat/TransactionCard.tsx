@@ -226,7 +226,7 @@ export function TransactionCard({ data, language, onCancel }: TransactionCardPro
           <h3 className="font-semibold text-lg">{text.successMsg}</h3>
           <p className="text-sm text-muted-foreground break-all px-2">Digest: {txDigest}</p>
           <a 
-            href={`https://suiscan.xyz/testnet/tx/${txDigest}`}
+            href={`https://suiscan.xyz/${process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet"}/tx/${txDigest}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-primary hover:underline mt-2"

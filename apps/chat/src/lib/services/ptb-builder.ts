@@ -7,6 +7,9 @@ export interface PTBBuildResult {
   humanReadableSummary: string;
 }
 
+// Vault address for swap destination (configurable via env)
+const SWAP_VAULT_ADDRESS = process.env.SUI_SWAP_VAULT_ADDRESS || "0x0000000000000000000000000000000000000000000000000000000000000000";
+
 /**
  * Dynamically fetches an active validator from the Sui network.
  * This avoids hardcoding a validator address that may become inactive.
@@ -202,9 +205,9 @@ async function buildSwapPTB(
     }
   }
 
-  // Fallback if DeepBook Router fails: just a mock transaction that returns the coin to the user 
+  // Fallback if DeepBook Router fails: just a mock transaction that sends the coin to the vault 
   // so we don't burn testnet tokens.
-  tx.transferObjects([coinToSwap], tx.pure.address(senderAddress));
+  tx.transferObjects([coinToSwap], tx.pure.address(SWAP_VAULT_ADDRESS));
 
   return { 
     transaction: tx, 
@@ -226,7 +229,8 @@ async function buildStakePTB(
 
   // Dynamically get an active validator from the chain
   const validator = await getActiveValidator(client);
-  console.log(`=== DEBUG: Staking to validator: ${validator.name} (${validator.address}) ===`);
+  const targetValidatorAddress = process.env.SUI_VALIDATOR_ADDRESS || validator.address;
+  console.log(`=== DEBUG: Staking to validator: ${validator.name} (${targetValidatorAddress}) ===`);
 
   const steps: TransactionStep[] = [
     {
@@ -253,7 +257,7 @@ async function buildStakePTB(
       arguments: [
         tx.object("0x5"), // Sui System State object
         coinToStake,
-        tx.pure.address(validator.address),
+        tx.pure.address(targetValidatorAddress),
       ],
     });
   }
