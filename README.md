@@ -12,8 +12,8 @@
     <strong>AI-Powered Conversational DeFi Assistant on Sui</strong>
   </p>
   <p align="center">
-    <a href="https://kura.ai"><img src="https://img.shields.io/badge/Landing%20Page-kura.ai-6F4FF2?style=flat-square" alt="Landing Page"></a>
-    <a href="https://chat.kura.ai"><img src="https://img.shields.io/badge/Chat%20App-chat.kura.ai-6F4FF2?style=flat-square" alt="Chat App"></a>
+    <a href="https://kura-landing-page.vercel.app/"><img src="https://img.shields.io/badge/Landing%20Page-kura--landing--page.vercel.app-6F4FF2?style=flat-square" alt="Landing Page"></a>
+    <a href="https://kura-chat.vercel.app/"><img src="https://img.shields.io/badge/Chat%20App-kura--chat.vercel.app-6F4FF2?style=flat-square" alt="Chat App"></a>
     <a href="https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"><img src="https://img.shields.io/badge/Sui%20Mainnet-Deployed-4F9EFF?style=flat-square" alt="Sui Mainnet"></a>
     <br/>
     <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js 16">
@@ -355,7 +355,7 @@ kura/
 │   │   │   │   └── schemas.ts     # Zod validation schemas
 │   │   │   └── types/             # TypeScript definitions
 │   │   └── public/                # Static assets (logos, icons)
-│   ├── landing-page/              # 🌐 Marketing site (kura.ai)
+│   ├── landing-page/              # 🌐 Marketing site (kura-landing-page.vercel.app)
 │   │   └── src/                   # Next.js 16 app
 │   └── smart-contracts/           # 📜 KuraLogger Move module
 │       ├── sources/
@@ -412,8 +412,8 @@ kura/
 
 | Property | URL |
 |----------|-----|
-| **Chat App** | [https://chat.kura.ai](https://chat.kura.ai) |
-| **Landing Page** | [https://kura.ai](https://kura.ai) |
+| **Chat App** | [https://kura-chat.vercel.app/](https://kura-chat.vercel.app/) |
+| **Landing Page** | [https://kura-landing-page.vercel.app/](https://kura-landing-page.vercel.app/) |
 | **Smart Contract** | [Sui Mainnet Explorer](https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20) |
 
 ---
