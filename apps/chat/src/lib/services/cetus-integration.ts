@@ -2,8 +2,8 @@ import { Transaction } from "@mysten/sui/transactions";
 import type { IntentJSON, TransactionStep } from "@/types/chat";
 import type { PTBBuildResult } from "./ptb-builder";
 
-// Cetus Package ID and Pool ID on Testnet (Placeholder for Hackathon)
-const CETUS_PACKAGE_ID = "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb"; // Testnet Cetus Core
+// Cetus Package ID (Placeholder for Hackathon — requires real Cetus SDK integration for production once compatible with Sui v2)
+const CETUS_PACKAGE_ID = process.env.CETUS_PACKAGE_ID || "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb";
 const DUMMY_CETUS_POOL_ID = "0x0000000000000000000000000000000000000000000000000000000000000001";
 const DUMMY_GLOBAL_CONFIG = "0x0000000000000000000000000000000000000000000000000000000000000002";
 
