@@ -27,10 +27,10 @@ async function getActiveValidator(client: any): Promise<{ address: string; name:
     return { address: best.suiAddress, name: best.name || "Top Validator" };
   } catch (e) {
     console.warn("Failed to fetch active validators, using fallback", e);
-    // Fallback: Blockscope.net (known active testnet validator as of June 2026)
+    // Fallback: Mysten Labs (known active mainnet validator)
     return {
-      address: "0x44b1b319e23495995fc837dafd28fc6af8b645edddff0fc1467f1ad631362c23",
-      name: "Blockscope.net"
+      address: "0xcb740e2e0faf78f7c5bdfbb1ab2ad823dd28e3bb85808099e06c5c78bfb8790f",
+      name: "Mysten Labs"
     };
   }
 }

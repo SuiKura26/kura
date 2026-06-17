@@ -1,34 +1,36 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { deepbook, testnetCoins, testnetPools } from "@mysten/deepbook-v3";
+import { deepbook, mainnetCoins, mainnetPools } from "@mysten/deepbook-v3";
 import { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 
-// Inisialisasi client Sui dengan DeepBook extension untuk Testnet
-const client = new SuiJsonRpcClient({ url: "https://fullnode.testnet.sui.io:443", network: "testnet" }).$extend(deepbook({
+// Inisialisasi client Sui dengan DeepBook extension untuk Mainnet
+const client = new SuiJsonRpcClient({ 
+  url: process.env.SUI_RPC_URL || "https://fullnode.mainnet.sui.io:443", 
+  network: (process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet") as any 
+}).$extend(deepbook({
   address: "0x0000000000000000000000000000000000000000000000000000000000000000" // Placeholder, address required by SDK
 }));
 
 /**
- * Mencari rute DeepBook menggunakan pool testnet bawaan dari SDK
+ * Mencari rute DeepBook menggunakan pool mainnet bawaan dari SDK
  */
 export async function findDeepBookRoute(
   tokenIn: string,
   tokenOut: string,
   coinType: string
 ) {
-  // DeepBook testnet uses DBUSDC instead of USDC
-  const tIn = tokenIn.toUpperCase() === "USDC" ? "DBUSDC" : tokenIn.toUpperCase();
-  const tOut = tokenOut.toUpperCase() === "USDC" ? "DBUSDC" : tokenOut.toUpperCase();
+  const tIn = tokenIn.toUpperCase();
+  const tOut = tokenOut.toUpperCase();
 
   // Format naming di DeepBook SDK: "BASE_QUOTE" (contoh: "SUI_DBUSDC")
   let poolKeyStr = `${tIn}_${tOut}`;
-  let pool = testnetPools[poolKeyStr];
+  let pool = mainnetPools[poolKeyStr];
   let isBaseToCoin = false;
   
   if (pool) {
     isBaseToCoin = true;
   } else {
     poolKeyStr = `${tOut}_${tIn}`;
-    pool = testnetPools[poolKeyStr];
+    pool = mainnetPools[poolKeyStr];
     isBaseToCoin = false;
   }
 
@@ -39,8 +41,8 @@ export async function findDeepBookRoute(
 
   // VALIDASI KETAT: Periksa apakah tipe koin yang dimasukkan (input) benar-benar cocok dengan tipe koin di Pool
   const inputTypeString = isBaseToCoin 
-    ? (testnetCoins as any)[pool.baseCoin]?.type 
-    : (testnetCoins as any)[pool.quoteCoin]?.type;
+    ? (mainnetCoins as any)[pool.baseCoin]?.type 
+    : (mainnetCoins as any)[pool.quoteCoin]?.type;
 
   // Helper untuk membersihkan padding nol dari hex address Sui
   const normalizeType = (type: string | undefined) => {
@@ -54,10 +56,10 @@ export async function findDeepBookRoute(
   }
 
   return {
-    poolKey: poolKeyStr, // Mengembalikan string key, misal "SUI_DBUSDC", yang dibutuhkan oleh SDK
+    poolKey: poolKeyStr, // Mengembalikan string key, misal "SUI_USDC", yang dibutuhkan oleh SDK
     isBaseToCoin,
-    tokenInType: testnetCoins[tIn]?.type || tokenIn,
-    tokenOutType: testnetCoins[tOut]?.type || tokenOut,
+    tokenInType: mainnetCoins[tIn]?.type || tokenIn,
+    tokenOutType: mainnetCoins[tOut]?.type || tokenOut,
   };
 }
 
@@ -70,13 +72,13 @@ export function buildDeepBookSwapPTB(
   coinToSwap: any,
   amountInBaseUnits: bigint,
   senderAddress: string,
-  deepAmountBaseUnits: bigint = BigInt(0) // Di testnet seringkali fee bisa 0 atau kita perlu split DEEP
+  deepAmountBaseUnits: bigint = BigInt(0) // Di mainnet bisa ditentukan slippage fee dll
 ) {
   if (!coinToSwap) return;
 
   try {
     // Buat koin dengan saldo 0 untuk DEEP token (fee)
-    const deepType = testnetCoins["DEEP"]?.type || "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP";
+    const deepType = mainnetCoins["DEEP"]?.type || "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP";
     const zeroDeepCoin = tx.moveCall({
       target: "0x2::coin::zero",
       typeArguments: [deepType]
@@ -87,7 +89,7 @@ export function buildDeepBookSwapPTB(
       poolKey: routeData.poolKey,
       amount: amountInBaseUnits,
       deepAmount: deepAmountBaseUnits, // Jumlah DEEP untuk membayar fee
-      minOut: BigInt(0), // Minimal output (0 = tidak ada slippage protection untuk testnet simulation)
+      minOut: BigInt(0), // Minimal output (0 = tidak ada slippage protection untuk simulasi)
       isBaseToCoin: routeData.isBaseToCoin,
       // Pass zero DEEP coin instead of tx.gas to avoid CommandArgumentError (Type mismatch)
       deepCoin: zeroDeepCoin 
