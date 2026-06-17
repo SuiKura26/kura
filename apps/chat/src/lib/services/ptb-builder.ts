@@ -7,10 +7,10 @@ export interface PTBBuildResult {
   humanReadableSummary: string;
 }
 
-// Known testnet validator for Staking (Mysten Labs Testnet Validator)
-const TESTNET_VALIDATOR = "0x8c6d48227b68677f5255c479fbcc726a4b12e3e9d80d220b33b00021b36bb0fb";
-// Dummy vault address for swap simulation on testnet
-const TESTNET_VAULT = "0x0000000000000000000000000000000000000000000000000000000000000000"; // burned
+// Staking validator address (configurable via env, defaults to Mysten Labs mainnet validator)
+const VALIDATOR_ADDRESS = process.env.SUI_VALIDATOR_ADDRESS || "0xcb740e2e0faf78f7c5bdfbb1ab2ad823dd28e3bb85808099e06c5c78bfb8790f";
+// Vault address for swap destination (configurable via env)
+const SWAP_VAULT_ADDRESS = process.env.SUI_SWAP_VAULT_ADDRESS || "0x0000000000000000000000000000000000000000000000000000000000000000";
 
 export interface RouteInfo {
   protocol: string;
@@ -157,7 +157,7 @@ async function buildSwapPTB(
   // REAL PTB Operations for Swap Simulation
   const coinToSwap = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
   if (coinToSwap) {
-    tx.transferObjects([coinToSwap], tx.pure.address(TESTNET_VAULT));
+    tx.transferObjects([coinToSwap], tx.pure.address(SWAP_VAULT_ADDRESS));
   }
 
   return { 
@@ -203,7 +203,7 @@ async function buildStakePTB(
       arguments: [
         tx.object("0x5"), // Sui System State object
         coinToStake,
-        tx.pure.address(TESTNET_VALIDATOR),
+        tx.pure.address(VALIDATOR_ADDRESS),
       ],
     });
   }

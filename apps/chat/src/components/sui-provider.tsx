@@ -10,13 +10,16 @@ const { networkConfig } = createNetworkConfig({
   mainnet: { url: "https://fullnode.mainnet.sui.io:443", network: "mainnet" as any },
 });
 
+// Read network from env var, default to mainnet for production
+const defaultNetwork = (process.env.NEXT_PUBLIC_SUI_NETWORK as "testnet" | "mainnet") || "mainnet";
+
 export function SuiProvider({ children }: { children: React.ReactNode }) {
   // Use state to avoid sharing the query client across requests in SSR
   const [queryClient] = useState(() => new QueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
+      <SuiClientProvider networks={networkConfig} defaultNetwork={defaultNetwork}>
         <WalletProvider autoConnect>
           {children}
         </WalletProvider>

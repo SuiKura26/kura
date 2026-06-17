@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
 
     const { messages, walletAddress, language } = parseResult.data;
 
-    // Resolve sender address: Use frontend wallet if connected, otherwise fallback to .env testnet wallet
-    const senderAddress = walletAddress || process.env.TESTNET_WALLET_ADDRESS;
+    // Resolve sender address: Use frontend wallet if connected, otherwise fallback to .env wallet
+    const senderAddress = walletAddress || process.env.FALLBACK_WALLET_ADDRESS;
 
     if (!senderAddress) {
       return sendResultAndClose({
@@ -96,7 +96,9 @@ export async function POST(request: NextRequest) {
     const tokenOut = intent.tokenOut ?? "SUI";
 
     const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
-    const client = new SuiJsonRpcClient({ url: "https://fullnode.testnet.sui.io:443", network: "testnet" as any });
+    const suiRpcUrl = process.env.SUI_RPC_URL || "https://fullnode.mainnet.sui.io:443";
+    const suiNetwork = (process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet") as any;
+    const client = new SuiJsonRpcClient({ url: suiRpcUrl, network: suiNetwork });
     
     // 3a. Handle check_price
     if (intent.action === "check_price") {
@@ -263,7 +265,7 @@ export async function POST(request: NextRequest) {
       gasEstimate: dryRunResult.gasUsed,
       guardianReport,
       txBytes: base64TxBytes,
-      kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID,
+      kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID || process.env.NEXT_PUBLIC_KURA_LOGGER_PACKAGE_ID,
       walrusData: (intentBlobId && reportBlobId) ? {
         intentBlobId,
         reportBlobId,
