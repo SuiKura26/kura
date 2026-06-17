@@ -274,7 +274,7 @@ export default function Home() {
               <div>
                 <h2 className="text-3xl font-bold text-text-bright mb-4">The Guardian Shell.</h2>
                 <p className="text-text-muted text-sm max-w-md leading-relaxed">
-                  Every transaction is wrapped in a validation layer that checks for malicious logic, drainer patterns, and protocol health in real-time.
+                  Acting as your digital shell in a DeFi ecosystem filled with pitfalls. Through the Guardian AI Layer, Kura actively detects, intercepts, and warns you about real threats like high slippage, low liquidity (stale pools), and adverse execution. No transaction passes through without this protection.
                 </p>
               </div>
             </div>
@@ -285,7 +285,7 @@ export default function Home() {
               <div>
                 <h2 className="text-3xl font-bold text-btn-primary-text mb-4">The Curator.</h2>
                 <p className="text-btn-primary-text/80 text-sm max-w-xs leading-relaxed font-medium">
-                  Your natural language intent is meticulously parsed into Programmable Transaction Blocks (PTB) optimized for the Sui network.
+                  Your personal curator for financial transactions. Kura translates arbitrary everyday language into clean, structured Programmable Transaction Blocks (PTB), presented as a simple, human-readable preview before execution.
                 </p>
               </div>
             </div>
@@ -293,15 +293,15 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-12 bg-card-bg-base border border-border-base rounded-sm hover:border-text-bright/10 transition-colors">
-              <h3 className="text-xl font-bold text-text-bright mb-4">Uncompromising Accuracy.</h3>
+              <h3 className="text-xl font-bold text-text-bright mb-4">High Accuracy (A-KURA-si).</h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Kura performs "shadow executions" against current network state to provide a 100% accurate preview of your balance changes before you sign.
+                Embodying "Akurasi" (Accuracy) in its DNA. Powered by Sui's Dry Run capability, Kura doesn't guess transaction outcomes. It runs accurate off-chain mathematical simulations against real blockchain state so that the AI never hallucinates.
               </p>
             </div>
             <div className="p-12 bg-card-bg-base border border-border-base rounded-sm hover:border-text-bright/10 transition-colors">
               <h3 className="text-xl font-bold text-text-bright mb-4">Deliberate Execution.</h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Kura is non-custodial and passive by design. No asset movement ever occurs without your explicit, manual confirmation of the Guardian report.
+                Never moving rashly, just like a turtle observing its surroundings before stepping. Kura enforces Explicit Confirmation: the AI never moves assets unilaterally. AI only drafts and analyzes, but final execution and signing remain 100% in your hands.
               </p>
             </div>
           </div>
@@ -354,8 +354,11 @@ export default function Home() {
               <div>
                 <Terminal className="w-6 h-6 text-text-bright mb-4" />
                 <h3 className="text-xl font-bold text-text-bright mb-2">Natural Language Chat</h3>
-                <p className="text-text-muted text-sm leading-relaxed">
-                  Type complex multi-protocol intents as easily as a text message.
+                <p className="text-text-muted text-sm leading-relaxed mb-4">
+                  Type complex multi-protocol intents as easily as a text message. Kura supports 10 core DeFi actions: swap, stake, unstake, lend, borrow, provide liquidity, remove liquidity, transfer, check balance, and check price.
+                </p>
+                <p className="text-[10px] font-mono text-text-muted">
+                  INTEGRATIONS: Cetus AMM · DeepBook V3 · Scallop · Sui Native
                 </p>
               </div>
               <div className="mt-6 p-4 bg-card-bg-accent border border-border-base rounded-sm flex items-center">
@@ -384,12 +387,32 @@ export default function Home() {
             </div>
 
             {/* Guardian Risk Report */}
-            <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
-              <Shield className="w-6 h-6 text-text-bright mb-4" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Guardian Risk Report</h3>
-              <p className="text-text-muted text-xs leading-relaxed">
-                AI-driven auditing for every transaction block prior to signing.
-              </p>
+            <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors flex flex-col justify-between">
+              <div>
+                <Shield className="w-6 h-6 text-text-bright mb-4" />
+                <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Guardian Risk Report</h3>
+                <p className="text-text-muted text-xs leading-relaxed mb-4">
+                  AI-driven auditing for every transaction block prior to signing.
+                </p>
+                <div className="space-y-2 text-[10px] font-mono text-text-muted">
+                  <div className="flex justify-between items-center border-b border-border-base pb-1">
+                    <span className="text-emerald-400 font-bold">LOW</span>
+                    <span>Slippage &lt; 1% | Pool &gt; $100K</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-border-base pb-1">
+                    <span className="text-yellow-400 font-bold">MEDIUM</span>
+                    <span>Slippage 1%-3% | Pool $10K-$100K</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-border-base pb-1">
+                    <span className="text-red-400 font-bold">HIGH</span>
+                    <span>Slippage 3%-5% | Pool $1K-$10K</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-red-600 font-bold">CRITICAL</span>
+                    <span>Slippage &gt; 5% | Pool &lt; $1K / Stale</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Human-readable PTB */}
@@ -500,6 +523,38 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-24 px-6 md:px-16 max-w-4xl mx-auto border-t border-border-base" id="faq">
+          <h2 className="text-3xl font-bold text-text-bright mb-12 text-center tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-6">
+            {[
+              {
+                q: "What protocols does Kura integrate with?",
+                a: "Kura is integrated with Cetus AMM for liquidity provision, DeepBook V3 for limit orderbook swaps, Scallop for lending/borrowing, and Sui Native Staking for staking operations."
+              },
+              {
+                q: "What actions can the Intent Parser process?",
+                a: "Kura supports 10 distinct DeFi actions: swap, stake, unstake, lend, borrow, provide liquidity, remove liquidity, transfer, check balance, and check price."
+              },
+              {
+                q: "Is Kura non-custodial?",
+                a: "Yes, Kura is 100% non-custodial. Kura operates under the philosophy of Deliberate Execution, meaning the AI only acts as an assistant to draft and analyze transactions, while the final cryptographic execution requires your manual confirmation and signature."
+              },
+              {
+                q: "How does the Guardian AI evaluate risk?",
+                a: "For every intent, the Guardian AI performs an off-chain dry-run simulation of the generated Programmable Transaction Block (PTB) on the Sui network. It extracts parameters like slippage and pool depth, compares them with real-time oracle data, and maps them to four risk tiers (Low, Medium, High, Critical) to protect you from bad executions."
+              }
+            ].map((faq, idx) => (
+              <div key={idx} className="p-6 border border-border-base bg-card-bg-base rounded-sm">
+                <h4 className="text-sm font-bold text-text-bright font-mono mb-2">{faq.q}</h4>
+                <p className="text-xs text-text-muted leading-relaxed">{faq.a}</p>
+              </div>
+            ))}
           </div>
         </section>
 
