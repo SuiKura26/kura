@@ -183,6 +183,9 @@ export function useChat() {
         { role: "user" as const, content },
       ];
 
+      const abortController = new AbortController();
+      const timeout = setTimeout(() => abortController.abort(), 30000);
+
       try {
         setLoadingStep("parsing");
 
@@ -194,6 +197,7 @@ export function useChat() {
             language,
             walletAddress: account?.address,
           }),
+          signal: abortController.signal,
         });
 
         if (!response.ok) {
@@ -205,6 +209,7 @@ export function useChat() {
 
         const decoder = new TextDecoder();
         let buffer = "";
+        let gotResult = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -222,12 +227,21 @@ export function useChat() {
             if (eventLine && dataLine) {
               const eventType = eventLine.replace("event: ", "").trim();
               const rawData = dataLine.replace("data: ", "").trim();
-              const parsedData = JSON.parse(rawData);
+              
+              let parsedData;
+              try {
+                parsedData = JSON.parse(rawData);
+              } catch (e) {
+                console.error("Failed to parse SSE data:", rawData);
+                continue;
+              }
 
               if (eventType === "step") {
                 setLoadingStep(parsedData as LoadingStep);
+              } else if (eventType === "error") {
+                throw new Error(parsedData.message || "Server reported an error");
               } else if (eventType === "result") {
-                setLoadingStep(null);
+                gotResult = true;
                 const data = parsedData as ChatAPIResponse;
                 const aiMsg: Message = {
                   id: (Date.now() + 1).toString(),
@@ -242,22 +256,37 @@ export function useChat() {
             }
           }
         }
-      } catch (error) {
+        
+        // If stream ended but we never got a result
+        if (!gotResult) {
+          throw new Error("Stream closed before receiving result");
+        }
+
+      } catch (error: any) {
         console.error("Chat API error:", error);
-        setLoadingStep(null);
+        
+        let errorMessage = language === "id"
+          ? "Maaf, terjadi kesalahan saat memproses permintaan Anda. Pastikan koneksi internet Anda stabil dan coba lagi."
+          : "Sorry, an error occurred while processing your request. Please check your internet connection and try again.";
+          
+        if (error.name === 'AbortError') {
+          errorMessage = language === "id"
+            ? "Permintaan terlalu lama untuk diproses (timeout). Silakan coba lagi nanti."
+            : "Request took too long to process (timeout). Please try again later.";
+        }
 
         // Add error message
         const errorMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content:
-            language === "id"
-              ? "Maaf, terjadi kesalahan saat memproses permintaan Anda. Pastikan koneksi internet Anda stabil dan coba lagi."
-              : "Sorry, an error occurred while processing your request. Please check your internet connection and try again.",
+          content: errorMessage,
           timestamp: Date.now() + 1,
           type: "text",
         };
         addMessage(errorMsg);
+      } finally {
+        clearTimeout(timeout);
+        setLoadingStep(null);
       }
     },
     [addMessage, language, messages, account?.address, activeSessionId]

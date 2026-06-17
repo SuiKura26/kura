@@ -38,8 +38,9 @@ export async function dryRunTransaction(
     let estimatedOutput = 0;
     for (const change of balanceChanges) {
       const amount = parseInt(change.amount);
-      if (amount > 0) {
-        estimatedOutput = amount / 1_000_000_000;
+      if (amount > 0 && !change.coinType.includes("::sui::SUI")) {
+        const decimals = change.coinType.toLowerCase().includes("usdc") ? 6 : 9;
+        estimatedOutput = amount / (10 ** decimals);
       }
     }
 

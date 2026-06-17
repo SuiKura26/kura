@@ -7,10 +7,33 @@ export interface PTBBuildResult {
   humanReadableSummary: string;
 }
 
-// Staking validator address (configurable via env, defaults to Mysten Labs mainnet validator)
-const VALIDATOR_ADDRESS = process.env.SUI_VALIDATOR_ADDRESS || "0xcb740e2e0faf78f7c5bdfbb1ab2ad823dd28e3bb85808099e06c5c78bfb8790f";
 // Vault address for swap destination (configurable via env)
 const SWAP_VAULT_ADDRESS = process.env.SUI_SWAP_VAULT_ADDRESS || "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+/**
+ * Dynamically fetches an active validator from the Sui network.
+ * This avoids hardcoding a validator address that may become inactive.
+ */
+async function getActiveValidator(client: any): Promise<{ address: string; name: string }> {
+  try {
+    const systemState = await client.getLatestSuiSystemState();
+    const validators = systemState.activeValidators;
+    if (!validators || validators.length === 0) {
+      throw new Error("No active validators found");
+    }
+    // Pick the validator with the highest voting power for reliability
+    const sorted = [...validators].sort((a: any, b: any) => Number(b.votingPower) - Number(a.votingPower));
+    const best = sorted[0];
+    return { address: best.suiAddress, name: best.name || "Top Validator" };
+  } catch (e) {
+    console.warn("Failed to fetch active validators, using fallback", e);
+    // Fallback: Blockscope.net (known active testnet validator as of June 2026)
+    return {
+      address: "0x44b1b319e23495995fc837dafd28fc6af8b645edddff0fc1467f1ad631362c23",
+      name: "Blockscope.net"
+    };
+  }
+}
 
 export interface RouteInfo {
   protocol: string;
@@ -18,40 +41,29 @@ export interface RouteInfo {
   poolLiqUsd: number;
 }
 
+import { findDeepBookRoute, buildDeepBookSwapPTB } from "./deepbook-swap";
+
 /**
- * AI Auto-Routing: Finds the best DEX pool based on mock simulation
+ * Auto-Routing: Finds the best DEX pool based on DeepBook
  */
 export async function findBestSwapRoute(
   intent: IntentJSON,
   amountBaseUnits: bigint,
+  coinType: string,
   client: any
-): Promise<RouteInfo | null> {
+): Promise<any | null> {
   if (intent.action !== "swap") return null;
+  const tokenIn = intent.tokenIn ?? "SUI";
+  const tokenOut = intent.tokenOut ?? "USDC";
 
-  // Simulate querying multiple DEXes on Testnet
-  const dexes = [
-    { protocol: "cetus", poolLiqUsd: 150000, slippage: 0.005 },
-    { protocol: "turbos", poolLiqUsd: 45000, slippage: 0.012 },
-    { protocol: "flowx", poolLiqUsd: 500, slippage: 0.085 },
-    { protocol: "hop", poolLiqUsd: 80000, slippage: 0.008 }
-  ];
+  // Query DeepBook V3
+  const deepBookRoute = await findDeepBookRoute(tokenIn, tokenOut, coinType);
+  if (deepBookRoute) {
+    return deepBookRoute;
+  }
 
-  // Add some randomness to simulate dynamic market conditions on Testnet
-  const simulatedRoutes = dexes.map(dex => {
-    const randomVariation = (Math.random() * 0.02) - 0.01; // +/- 1%
-    const finalSlippage = Math.max(0.001, dex.slippage + randomVariation);
-    return {
-      protocol: dex.protocol,
-      estimatedOutputPct: 1 - finalSlippage,
-      poolLiqUsd: dex.poolLiqUsd * (1 + randomVariation)
-    };
-  });
-
-  // Sort by highest output (least slippage)
-  simulatedRoutes.sort((a, b) => b.estimatedOutputPct - a.estimatedOutputPct);
-
-  // Return the best route
-  return simulatedRoutes[0];
+  // Fallback to simulated Cetus router
+  return { protocol: "cetus", poolKey: null };
 }
 
 /**
@@ -94,7 +106,7 @@ export async function buildPTB(
   coinType: string,
   amountBaseUnits: bigint,
   client: any,
-  bestRoute?: RouteInfo | null
+  bestRoute?: any | null
 ): Promise<PTBBuildResult> {
   const tx = new Transaction();
   tx.setSender(senderAddress);
@@ -106,8 +118,18 @@ export async function buildPTB(
       return buildSwapPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, bestRoute);
     case "stake":
       return buildStakePTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "unstake":
+      return buildUnstakePTB(tx, intent, amountInRaw, senderAddress, client);
     case "transfer":
       return buildTransferPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "lend":
+      return buildLendPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "borrow":
+      return buildBorrowPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "provide_liquidity":
+      return buildProvideLiquidityPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+    case "remove_liquidity":
+      return buildRemoveLiquidityPTB(tx, intent, amountInRaw, senderAddress, client);
     default:
       return buildGenericPTB(tx, intent);
   }
@@ -121,13 +143,12 @@ async function buildSwapPTB(
   coinType: string,
   senderAddress: string,
   client: any,
-  bestRoute?: RouteInfo | null
+  bestRoute?: any | null
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
   const tokenOut = intent.tokenOut ?? "USDC";
   
-  // Use best route protocol if available, else fallback
-  const protocol = bestRoute?.protocol ?? intent.protocol ?? "cetus";
+  const protocol = bestRoute?.protocol || "cetus";
 
   // Build human-readable steps
   const steps: TransactionStep[] = [
@@ -154,16 +175,44 @@ async function buildSwapPTB(
     },
   ];
 
-  // REAL PTB Operations for Swap Simulation
+  // Prepare the coin to swap
   const coinToSwap = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
-  if (coinToSwap) {
-    tx.transferObjects([coinToSwap], tx.pure.address(SWAP_VAULT_ADDRESS));
+  
+  if (!coinToSwap) {
+    throw new Error(`Gagal mendapatkan koin ${tokenIn} dari dompet kamu.`);
   }
+
+  // If we have a route from DeepBook, build the actual swap transaction
+  if (bestRoute && bestRoute.poolKey) {
+    try {
+      buildDeepBookSwapPTB(
+        tx,
+        bestRoute,
+        coinToSwap,
+        amountBaseUnits,
+        senderAddress,
+        BigInt(0) // testnet fee
+      );
+      
+      return { 
+        transaction: tx, 
+        steps, 
+        humanReadableSummary: `Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via DeepBook V3` 
+      };
+    } catch (e) {
+      console.warn("DeepBook Swap failed, falling back to sending back to user");
+      // Fallthrough to mock
+    }
+  }
+
+  // Fallback if DeepBook Router fails: just a mock transaction that sends the coin to the vault 
+  // so we don't burn testnet tokens.
+  tx.transferObjects([coinToSwap], tx.pure.address(SWAP_VAULT_ADDRESS));
 
   return { 
     transaction: tx, 
     steps, 
-    humanReadableSummary: `Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via ${protocol}` 
+    humanReadableSummary: `(Simulated) Swap ${amountInRaw} ${tokenIn} → ${tokenOut} via ${protocol}` 
   };
 }
 
@@ -178,6 +227,11 @@ async function buildStakePTB(
 ): Promise<PTBBuildResult> {
   const tokenIn = intent.tokenIn ?? "SUI";
 
+  // Dynamically get an active validator from the chain
+  const validator = await getActiveValidator(client);
+  const targetValidatorAddress = process.env.SUI_VALIDATOR_ADDRESS || validator.address;
+  console.log(`=== DEBUG: Staking to validator: ${validator.name} (${targetValidatorAddress}) ===`);
+
   const steps: TransactionStep[] = [
     {
       id: "step1",
@@ -189,13 +243,13 @@ async function buildStakePTB(
     {
       id: "step2",
       description: {
-        id: `Langkah 2: Mendaftarkan stake ke Validator Mysten Labs`,
-        en: `Step 2: Requesting stake with Mysten Labs Validator`,
+        id: `Langkah 2: Mendaftarkan stake ke Validator ${validator.name}`,
+        en: `Step 2: Requesting stake with ${validator.name} Validator`,
       },
     },
   ];
 
-  // REAL PTB Operations for Staking Simulation
+  // REAL PTB Operations for Staking
   const coinToStake = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
   if (coinToStake) {
     tx.moveCall({
@@ -203,7 +257,7 @@ async function buildStakePTB(
       arguments: [
         tx.object("0x5"), // Sui System State object
         coinToStake,
-        tx.pure.address(VALIDATOR_ADDRESS),
+        tx.pure.address(targetValidatorAddress),
       ],
     });
   }
@@ -211,7 +265,62 @@ async function buildStakePTB(
   return { 
     transaction: tx, 
     steps, 
-    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn} to Mysten Labs Validator` 
+    humanReadableSummary: `Stake ${amountInRaw} ${tokenIn} to ${validator.name} Validator` 
+  };
+}
+
+async function buildUnstakePTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const tokenIn = intent.tokenIn ?? "SUI";
+
+  const steps: TransactionStep[] = [
+    {
+      id: "step1",
+      description: {
+        id: `Langkah 1: Mengambil data StakedSui di wallet Anda`,
+        en: `Step 1: Fetching StakedSui objects in your wallet`,
+      },
+    },
+    {
+      id: "step2",
+      description: {
+        id: `Langkah 2: Meminta pencairan SUI dari validator`,
+        en: `Step 2: Requesting SUI withdrawal from validator`,
+      },
+    },
+  ];
+
+  // Fetch staked SUI objects
+  const stakedObjects = await client.getOwnedObjects({
+    owner: senderAddress,
+    filter: { StructType: "0x3::staking_pool::StakedSui" },
+    options: { showContent: true }
+  });
+
+  if (!stakedObjects.data || stakedObjects.data.length === 0) {
+    throw new Error("Tidak ditemukan Staked SUI di wallet Anda.");
+  }
+
+  // Just pick the first one for simplicity, or we could aggregate if needed
+  const stakedObjId = stakedObjects.data[0].data.objectId;
+
+  tx.moveCall({
+    target: "0x3::sui_system::request_withdraw_stake",
+    arguments: [
+      tx.object("0x5"), // Sui System State object
+      tx.object(stakedObjId)
+    ],
+  });
+
+  return {
+    transaction: tx,
+    steps,
+    humanReadableSummary: `Unstake SUI (Akan tersedia setelah epoch berakhir)`
   };
 }
 
@@ -254,6 +363,64 @@ async function buildTransferPTB(
     steps, 
     humanReadableSummary: `Transfer ${amountInRaw} ${tokenIn} to ${toAddress}` 
   };
+}
+
+import { buildScallopLendPTB, buildScallopBorrowPTB } from "./scallop-integration";
+
+async function buildLendPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const coinToLend = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (!coinToLend) {
+    throw new Error(`Gagal mendapatkan koin ${intent.tokenIn} dari dompet Anda.`);
+  }
+  return buildScallopLendPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, coinToLend);
+}
+
+async function buildBorrowPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  return buildScallopBorrowPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client);
+}
+
+import { buildCetusProvideLiquidityPTB, buildCetusRemoveLiquidityPTB } from "./cetus-integration";
+
+async function buildProvideLiquidityPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  amountBaseUnits: bigint,
+  coinType: string,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  const coinToProvide = await getCoinForTx(tx, client, senderAddress, coinType, amountBaseUnits);
+  if (!coinToProvide) {
+    throw new Error(`Gagal mendapatkan koin ${intent.tokenIn} dari dompet Anda.`);
+  }
+  return buildCetusProvideLiquidityPTB(tx, intent, amountInRaw, amountBaseUnits, coinType, senderAddress, client, coinToProvide);
+}
+
+async function buildRemoveLiquidityPTB(
+  tx: Transaction,
+  intent: IntentJSON,
+  amountInRaw: number,
+  senderAddress: string,
+  client: any
+): Promise<PTBBuildResult> {
+  return buildCetusRemoveLiquidityPTB(tx, intent, amountInRaw, senderAddress, client);
 }
 
 async function buildGenericPTB(

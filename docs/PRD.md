@@ -94,15 +94,17 @@ Nama **"Kura"** bukan sekadar label produk — ia adalah manifesto filosofis yan
 | No. | Fitur | Keterangan |
 |---|---|---|
 | 1 | Chat Interface berbasis Natural Language | Antarmuka percakapan yang menerima input bahasa Indonesia/Inggris untuk memulai transaksi DeFi. |
-| 2 | Intent Parser Agent (AI) | Agen AI yang menerjemahkan teks bebas menjadi JSON terstruktur berisi parameter transaksi yang valid. |
-| 3 | PTB Builder Service | Layanan TypeScript yang merakit Programmable Transaction Block menggunakan `@mysten/sui.js` berdasarkan JSON dari Intent Parser. |
+| 2 | Intent Parser Agent (AI) | Agen AI yang menerjemahkan teks bebas menjadi JSON terstruktur berisi parameter transaksi yang valid. Mendukung 10 aksi DeFi: swap, stake, unstake, lend, borrow, provide_liquidity, remove_liquidity, transfer, check_balance, check_price. |
+| 3 | PTB Builder Service | Layanan TypeScript yang merakit Programmable Transaction Block menggunakan `@mysten/sui` berdasarkan JSON dari Intent Parser. Mendukung integrasi multi-protokol: DeepBook V3 (swap), Scallop (lend/borrow), Cetus (LP), dan Sui Native (stake/unstake/transfer). |
 | 4 | Dry Run Simulation | Simulasi off-chain menggunakan `dryRunTransactionBlock` via Sui RPC untuk mendapatkan hasil transaksi tanpa biaya gas. |
-| 5 | Guardian AI Layer | Agen AI kedua yang menganalisis hasil Dry Run, mendeteksi slippage, risiko likuiditas, dan menghasilkan laporan risiko dalam bahasa natural. |
+| 5 | Guardian AI Layer | Agen AI kedua yang menganalisis hasil Dry Run, mendeteksi slippage, risiko likuiditas, dan menghasilkan laporan risiko dalam bahasa natural. Dilengkapi Dynamic Exemption untuk aksi non-swap. |
 | 6 | Human-Readable PTB Preview | Kartu transaksi yang menampilkan langkah-langkah eksekusi secara rinci dalam bahasa yang mudah dipahami, beserta peringatan risiko. |
 | 7 | Explicit Confirmation Flow | Alur konfirmasi dua langkah dengan tombol 'Saya Paham & Eksekusi' sebelum transaksi diteruskan ke wallet. |
 | 8 | Wallet Integration (dApp Kit) | Integrasi dengan Sui dApp Kit untuk koneksi wallet konvensional dan opsi zkLogin (Google Sign-In). |
 | 9 | On-Chain Log Storage (KuraLogger) | Smart contract Move di Sui Testnet yang menyimpan secara permanen dan tidak dapat diubah: GuardianReport, ConfirmationEvent, dan ExecutionLog setiap transaksi. |
 | 10 | Eksekusi On-Chain di Sui Testnet | Kemampuan mengirimkan PTB yang telah ditandatangani ke jaringan Sui Testnet untuk eksekusi aktual. |
+| 11 | Walrus Decentralized Storage | Penyimpanan JSON intent dan laporan Guardian ke jaringan Walrus untuk transparansi dan audit trail. |
+| 12 | Multi-Protocol DeFi Integration | Integrasi dengan Scallop (lending/borrowing), Cetus AMM (liquidity provision), DeepBook V3 (CLOB swap), dan Sui Native staking/unstaking. |
 
 ### 3.2 Fitur yang Tidak Termasuk (Out-of-Scope)
 
@@ -283,8 +285,8 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
                          LAPISAN BLOCKCHAIN (Sui Network)
   +----------------------------+     +------------------+     +--------------+
   |    KuraLogger Contract     |     | Sui Testnet RPC  |     |DeFi Protocols|
-  |       (Move Module)        |     |   (Dry Run /     |     |    Cetus,    |
-  | • GuardianReport           | <-> | signAndExecute)  | <-> |   DeepBook   |
+  |       (Move Module)        |     |   (Dry Run /     |     |   DeepBook,  |
+  | • GuardianReport           | <-> | signAndExecute)  | <-> |Cetus,Scallop |
   | • ExecutionLog             |     |                  |     |              |
   | • ConfirmationEvent        |     |                  |     |              |
   +----------------------------+     +------------------+     +--------------+
@@ -300,8 +302,8 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
 * **State Management**: Pengelolaan state yang komprehensif mencakup status loading, riwayat percakapan aktif, data transaksi pending, dan status konfirmasi pengguna.
 
 #### Lapisan 2: Backend & Agentic Layer (Otak Sistem)
-* **Agent 1 – Intent Parser (The PM)**: Menggunakan model Gemini Flash untuk memproses teks bahasa natural dan riwayat percakapan. Diinstruksikan untuk membalas secara eksklusif dalam format JSON terstruktur yang berisi: action type, token asal, token tujuan, jumlah, dan protokol yang direkomendasikan.
-* **PTB Builder Service**: Modul TypeScript murni yang menerima JSON dari Intent Parser dan menggunakan `@mysten/sui.js` untuk merakit objek TransactionBlock (PTB) yang valid di dalam memory server. Ini adalah tahap pembuatan 'resep' transaksi sebelum simulasi.
+* **Agent 1 – Intent Parser (The PM)**: Menggunakan model AI (OpenAI-compatible) untuk memproses teks bahasa natural dan riwayat percakapan. Diinstruksikan untuk membalas secara eksklusif dalam format JSON terstruktur yang berisi: action type (10 aksi DeFi), token asal, token tujuan, jumlah, dan protokol yang direkomendasikan.
+* **PTB Builder Service**: Modul TypeScript murni yang menerima JSON dari Intent Parser dan menggunakan `@mysten/sui` untuk merakit objek Transaction yang valid di dalam memory server. Mendukung multi-protokol: DeepBook V3 (`deepbook-swap.ts`), Scallop (`scallop-integration.ts`), Cetus (`cetus-integration.ts`), dan Sui Native staking. Setiap aksi memiliki dedicated builder function.
 * **Agent 2 – The Guardian (The QA)**: Menerima output mentah dari Dry Run simulation dan data harga pasar real-time. Menghitung persentase slippage, kedalaman pool, dan price impact. Menghasilkan laporan risiko terstruktur dalam bahasa natural yang mudah dipahami.
 * **Vercel AI SDK**: Framework orkestrasi yang memungkinkan streaming respons AI, manajemen koneksi ke berbagai model AI, dan penanganan tool calls secara efisien.
 
@@ -316,7 +318,11 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
 * **Sui Testnet RPC**: Endpoint komunikasi antara backend dengan jaringan Sui. Digunakan untuk: Dry Run (simulasi off-chain), pemanggilan entry function KuraLogger, dan pengambilan data state on-chain.
 * **dryRunTransactionBlock**: Fungsi RPC kritis untuk simulasi matematis PTB tanpa gas riil. Mengembalikan estimasi akurat: output token, gas yang digunakan, dan perubahan state.
 * **signAndExecuteTransactionBlock**: Fungsi eksekusi akhir yang hanya dipanggil setelah pengguna memberikan konfirmasi eksplisit. Memicu popup wallet/zkLogin untuk tanda tangan kriptografi.
-* **On-Chain DeFi Protocols**: Integrasi dengan protokol DeFi di ekosistem Sui seperti Cetus (AMM), DeepBook (CLOB DEX), dan Scallop (lending) melalui PTB yang dirakit oleh PTB Builder.
+* **On-Chain DeFi Protocols**: Integrasi dengan protokol DeFi di ekosistem Sui:
+  - **DeepBook V3** (`@mysten/deepbook-v3`): CLOB DEX native di Sui untuk swap dengan orderbook
+  - **Cetus AMM** (`@cetusprotocol/cetus-sui-clmm-sdk`): Concentrated Liquidity Market Maker untuk provide/remove liquidity
+  - **Scallop Protocol** (`@scallop-io/sui-scallop-sdk`): Lending/borrowing protocol untuk operasi lend dan borrow
+  - **Sui Native Staking**: Menggunakan `0x3::sui_system` untuk stake/unstake SUI dengan dynamic validator selection
 
 ### 8.3 Spesifikasi Modul Smart Contract: KuraLogger
 
@@ -461,7 +467,9 @@ Intent Parser adalah agen AI pertama yang bertanggung jawab untuk memahami bahas
 
 ### 10.3 PTB Builder Service
 PTB Builder adalah modul TypeScript deterministik yang tidak menggunakan AI — ia mengikuti aturan yang telah didefinisikan secara eksplisit untuk merakit TransactionBlock yang valid. Pendekatan ini memastikan konsistensi dan keandalan tinggi dalam pembuatan transaksi.
-* Mendukung rakit PTB untuk operasi: coin split, swap via Cetus/DeepBook, liquidity provision, dan staking.
+* Mendukung rakit PTB untuk operasi: coin split, swap via DeepBook V3/Cetus, liquidity provision via Cetus AMM, lending/borrowing via Scallop, staking/unstaking via Sui Native, dan transfer.
+* **Dynamic Validator Selection**: Untuk staking, sistem secara otomatis memilih validator aktif dengan voting power tertinggi menggunakan `getLatestSuiSystemState()`, menghindari error `MoveAbort` akibat validator inaktif.
+* **Smart Input Validation**: Aksi seperti `unstake`, `borrow`, dan `remove_liquidity` melewati pengecekan saldo input karena tidak memerlukan token awal dari user.
 * Validasi parameter input sebelum merakit PTB: jumlah token tidak boleh melebihi saldo, address harus valid format Sui.
 * Optimasi gas: menggabungkan langkah-langkah yang dapat digabungkan dalam satu PTB untuk meminimalkan biaya.
 * Menghasilkan human-readable representation dari setiap step PTB untuk ditampilkan di Preview Card.
@@ -499,7 +507,7 @@ Guardian adalah lapisan kecerdasan kritis yang membedakan Kura dari solusi chatb
 ## 11. Tech Stack & Dependensi
 
 ### Frontend
-* **Framework**: Next.js 14+ (App Router) — Full-stack React framework dengan built-in API Routes dan Server Components
+* **Framework**: Next.js 16+ (App Router) — Full-stack React framework dengan built-in API Routes dan Server Components
 * **UI Library**: React 18+ — Komponen berbasis component untuk antarmuka interaktif
 * **Styling**: Tailwind CSS — Utility-first CSS framework untuk pengembangan UI yang cepat dan konsisten
 * **Animasi**: Framer Motion — Library animasi React untuk Transaction Card reveal dan loading state
@@ -507,8 +515,11 @@ Guardian adalah lapisan kecerdasan kritis yang membedakan Kura dari solusi chatb
 
 ### Backend & AI
 * **AI Framework**: Vercel AI SDK — Orkestrasi model AI, streaming, dan manajemen tool calls
-* **AI Model**: Google Gemini 1.5 Flash / 2.0 Flash — Model fast-inference untuk Intent Parser dan Guardian Agent
-* **Blockchain SDK**: `@mysten/sui.js` — Official TypeScript SDK untuk berinteraksi dengan Sui Network
+* **AI Model**: OpenAI-Compatible Model (sumopod.chat) — Model fast-inference untuk Intent Parser dan Guardian Agent
+* **Blockchain SDK**: `@mysten/sui` (v2.17+) — Official TypeScript SDK untuk berinteraksi dengan Sui Network
+* **DEX SDK**: `@mysten/deepbook-v3` (v1.4+) — SDK untuk interaksi dengan DeepBook V3 CLOB DEX
+* **Lending SDK**: `@scallop-io/sui-scallop-sdk` (v2.4+) — SDK untuk interaksi dengan Scallop lending/borrowing protocol
+* **AMM SDK**: `@cetusprotocol/cetus-sui-clmm-sdk` (v5.4+) — SDK untuk interaksi dengan Cetus Concentrated Liquidity AMM
 * **Runtime**: Node.js 18+ (Edge Runtime) — Runtime JavaScript server-side via Vercel Edge Functions
 * **API Style**: REST (Next.js API Routes) — Endpoint `/api/chat` sebagai entry point utama komunikasi client-server
 
@@ -523,9 +534,10 @@ Guardian adalah lapisan kecerdasan kritis yang membedakan Kura dari solusi chatb
 * **Network**: Sui Testnet — Jaringan test Sui untuk eksekusi transaksi dan deployment KuraLogger smart contract
 * **Smart Contract**: KuraLogger (Move Module) — Move module yang di-deploy on-chain sebagai lapisan log permanen: GuardianReport, ExecutionLog, Events
 * **Gas Sponsorship**: Sui Sponsored Transactions — Biaya gas untuk operasi KuraLogger ditanggung Kura agar tidak membebani pengguna
-* **DEX Protocol**: Cetus Protocol — AMM DEX utama di ekosistem Sui untuk operasi swap
-* **CLOB DEX**: DeepBook — Central Limit Order Book DEX native di Sui untuk trading lebih efisien
-* **Block Explorer**: SuiVision — Verifikasi transaksi dan inspeksi objek KuraLogger on-chain
+* **DEX Protocol**: DeepBook V3 — Central Limit Order Book DEX native di Sui untuk swap trading
+* **AMM DEX**: Cetus Protocol — AMM DEX dengan Concentrated Liquidity Market Maker (CLMM) untuk liquidity provision
+* **Lending Protocol**: Scallop Protocol — Lending/borrowing protocol di ekosistem Sui
+* **Block Explorer**: SuiVision / SuiScan — Verifikasi transaksi dan inspeksi objek KuraLogger on-chain
 * **RPC**: Sui Testnet RPC — `https://fullnode.testnet.sui.io:443` – Dry Run, contract calls, event queries
 
 ### Deployment & DevOps

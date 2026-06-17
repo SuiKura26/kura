@@ -23,279 +23,344 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const sendEvent = (event: string, data: any) => {
-        controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        try {
+          controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        } catch (e) {
+          // Controller may already be closed (e.g. client aborted the request)
+        }
       };
 
       const sendResultAndClose = (data: ChatAPIResponse) => {
         sendEvent("result", data);
-        controller.close();
+        try {
+          controller.close();
+        } catch (e) {
+          // Controller may already be closed
+        }
       };
 
       try {
-    // 1. Parse and validate request body
-    const parseResult = chatRequestSchema.safeParse(body);
+        // 1. Parse and validate request body
+        const parseResult = chatRequestSchema.safeParse(body);
 
-    if (!parseResult.success) {
-      return sendResultAndClose({
-          role: "assistant",
-          content: "Request tidak valid. Pastikan format pesan sudah benar.",
-          type: "text",
-        } );
-    }
-
-    const { messages, walletAddress, language } = parseResult.data;
-
-    // Resolve sender address: Use frontend wallet if connected, otherwise fallback to .env wallet
-    const senderAddress = walletAddress || process.env.FALLBACK_WALLET_ADDRESS;
-
-    if (!senderAddress) {
-      return sendResultAndClose({
-          role: "assistant",
-          content: language === "en" 
-            ? "Please connect your wallet first to execute transactions." 
-            : "Harap hubungkan dompet Anda terlebih dahulu untuk mengeksekusi transaksi.",
-          type: "text",
-        } );
-    }
-
-    // 2. Fetch prices concurrently with Intent Parsing to save time
-    const pricesPromise = fetchTokenPrices();
-    
-    // Agent 1: Intent Parser
-    sendEvent("step", "parsing");
-    let intent;
-    try {
-      intent = await parseIntent(messages);
-      console.log("=== DEBUG: Parsed Intent ===", JSON.stringify(intent, null, 2));
-    } catch (error) {
-      console.error("Intent Parser error:", error);
-      return sendResultAndClose({
-          role: "assistant",
-          content:
-            language === "en"
-              ? "Sorry, I couldn't understand your request. Please try rephrasing your command, for example: 'Swap 100 USDC to SUI'."
-              : "Maaf, saya tidak bisa memahami permintaan Anda. Coba ulangi perintah Anda, contoh: 'Tukar 100 USDC ke SUI'.",
-          type: "text",
-        } );
-    }
-
-    // 3. Handle clarification requests
-    if (intent.action === "clarify") {
-      return sendResultAndClose({
-          role: "assistant",
-          content: intent.reason || (language === "en"
-            ? "Could you clarify what you'd like to do? For example: 'Swap 100 USDC to SUI'."
-            : "Bisa tolong perjelas apa yang ingin Anda lakukan? Contoh: 'Tukar 100 USDC ke SUI'."),
-          type: "text",
-        } );
-    }
-
-    // Wait for prices to resolve
-    const prices = await pricesPromise;
-    const tokenIn = intent.tokenIn ?? "USDC";
-    const tokenOut = intent.tokenOut ?? "SUI";
-
-    const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
-    const suiRpcUrl = process.env.SUI_RPC_URL || "https://fullnode.mainnet.sui.io:443";
-    const suiNetwork = (process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet") as any;
-    const client = new SuiJsonRpcClient({ url: suiRpcUrl, network: suiNetwork });
-    
-    // 3a. Handle check_price
-    if (intent.action === "check_price") {
-      const rate = getExchangeRate(tokenIn, "USDC", prices);
-      return sendResultAndClose({
-          role: "assistant",
-          content: language === "en"
-            ? `The current price of ${tokenIn} is approximately $${rate.toFixed(4)} USD.`
-            : `Harga ${tokenIn} saat ini adalah sekitar $${rate.toFixed(4)} USD.`,
-          type: "text",
-        } );
-    }
-
-    // 3b. Handle general chat
-    if (intent.action === "chat") {
-      return sendResultAndClose({
-          role: "assistant",
-          content: intent.response || "...",
-          type: "text",
-        } );
-    }
-
-    // 3c. Handle check_balance
-    if (intent.action === "check_balance") {
-      try {
-        const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
-        const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
-
-        if (!coinInfo) {
+        if (!parseResult.success) {
           return sendResultAndClose({
               role: "assistant",
-              content: language === "en"
-                ? `You don't have any ${tokenIn} in your wallet.`
-                : `Anda tidak memiliki saldo ${tokenIn} di dompet Anda.`,
+              content: "Request tidak valid. Pastikan format pesan sudah benar.",
               type: "text",
             } );
         }
 
-        const totalBalance = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
+        const { messages, walletAddress, language } = parseResult.data;
+
+        // Resolve sender address: Use frontend wallet if connected, otherwise fallback to .env wallet
+        const senderAddress = walletAddress || process.env.FALLBACK_WALLET_ADDRESS;
+
+        if (!senderAddress) {
+          return sendResultAndClose({
+              role: "assistant",
+              content: language === "en" 
+                ? "Please connect your wallet first to execute transactions." 
+                : "Harap hubungkan dompet Anda terlebih dahulu untuk mengeksekusi transaksi.",
+              type: "text",
+            } );
+        }
+
+        // 2. Fetch prices concurrently with Intent Parsing to save time
+        const pricesPromise = fetchTokenPrices();
         
+        // Agent 1: Intent Parser
+        sendEvent("step", "parsing");
+        let intent;
+        try {
+          intent = await parseIntent(messages);
+          console.log("=== DEBUG: Parsed Intent ===", JSON.stringify(intent, null, 2));
+        } catch (error) {
+          console.error("Intent Parser error:", error);
+          return sendResultAndClose({
+              role: "assistant",
+              content:
+                language === "en"
+                  ? "Sorry, I couldn't understand your request. Please try rephrasing your command, for example: 'Swap 100 USDC to SUI'."
+                  : "Maaf, saya tidak bisa memahami permintaan Anda. Coba ulangi perintah Anda, contoh: 'Tukar 100 USDC ke SUI'.",
+              type: "text",
+            } );
+        }
+
+        // 3. Handle clarification requests
+        if (intent.action === "clarify") {
+          return sendResultAndClose({
+              role: "assistant",
+              content: intent.reason || (language === "en"
+                ? "Could you clarify what you'd like to do? For example: 'Swap 100 USDC to SUI'."
+                : "Bisa tolong perjelas apa yang ingin Anda lakukan? Contoh: 'Tukar 100 USDC ke SUI'."),
+              type: "text",
+            } );
+        }
+
+        // Wait for prices to resolve
+        const prices = await pricesPromise;
+        const tokenIn = intent.tokenIn ?? "USDC";
+        const tokenOut = intent.tokenOut ?? "SUI";
+
+        const { SuiJsonRpcClient } = await import("@mysten/sui/jsonRpc");
+        const suiRpcUrl = process.env.SUI_RPC_URL || "https://fullnode.mainnet.sui.io:443";
+        const suiNetwork = (process.env.NEXT_PUBLIC_SUI_NETWORK || "mainnet") as any;
+        const client = new SuiJsonRpcClient({ url: suiRpcUrl, network: suiNetwork });
+        
+        // 3a. Handle check_price
+        if (intent.action === "check_price") {
+          const rate = getExchangeRate(tokenIn, "USDC", prices);
+          return sendResultAndClose({
+              role: "assistant",
+              content: language === "en"
+                ? `The current price of ${tokenIn} is approximately $${rate.toFixed(4)} USD.`
+                : `Harga ${tokenIn} saat ini adalah sekitar $${rate.toFixed(4)} USD.`,
+              type: "text",
+            } );
+        }
+
+        // 3b. Handle general chat
+        if (intent.action === "chat") {
+          return sendResultAndClose({
+              role: "assistant",
+              content: intent.response || "...",
+              type: "text",
+            } );
+        }
+
+        // 3c. Handle check_balance
+        if (intent.action === "check_balance") {
+          try {
+            const { findCoinInWallet, getAllWalletBalances } = await import("@/lib/services/wallet-scanner");
+            
+            // If user asked for a specific token
+            if (intent.tokenIn) {
+              const coinInfo = await findCoinInWallet(client as any, senderAddress, intent.tokenIn);
+
+              if (!coinInfo) {
+                return sendResultAndClose({
+                    role: "assistant",
+                    content: language === "en"
+                      ? `You don't have any ${intent.tokenIn} in your wallet.`
+                      : `Anda tidak memiliki saldo ${intent.tokenIn} di dompet Anda.`,
+                    type: "text",
+                  } );
+              }
+
+              const totalBalance = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
+              
+              return sendResultAndClose({
+                  role: "assistant",
+                  content: language === "en"
+                    ? `Your current ${intent.tokenIn} balance is ${totalBalance.toFixed(4)} ${intent.tokenIn}.`
+                    : `Saldo ${intent.tokenIn} Anda saat ini adalah ${totalBalance.toFixed(4)} ${intent.tokenIn}.`,
+                  type: "text",
+                } );
+            } 
+            
+            // If user asked for general wallet balance
+            else {
+              const allCoins = await getAllWalletBalances(client as any, senderAddress);
+              
+              if (allCoins.length === 0) {
+                return sendResultAndClose({
+                  role: "assistant",
+                  content: language === "en"
+                    ? "Your wallet is currently empty."
+                    : "Dompet Anda saat ini kosong.",
+                  type: "text",
+                });
+              }
+              
+              let contentId = "📊 Saldo wallet Anda saat ini:\n\n";
+              let contentEn = "📊 Your current wallet balance:\n\n";
+              
+              for (const coin of allCoins) {
+                const totalBalance = Number(coin.totalBalanceBase) / (10 ** coin.decimals);
+                const rate = getExchangeRate(coin.symbol, "USDC", prices);
+                const usdValue = totalBalance * rate;
+                
+                const usdString = usdValue > 0.01 ? ` (~$${usdValue.toFixed(2)})` : "";
+                const line = `• **${coin.symbol}**: ${totalBalance.toFixed(4)} ${coin.symbol}${usdString}\n`;
+                
+                contentId += line;
+                contentEn += line;
+              }
+              
+              return sendResultAndClose({
+                role: "assistant",
+                content: language === "en" ? contentEn : contentId,
+                type: "text",
+              });
+            }
+          } catch (e) {
+            console.error("Balance fetch error:", e);
+            return sendResultAndClose({
+                role: "assistant",
+                content: language === "en"
+                  ? "Sorry, I couldn't fetch your balance right now."
+                  : "Maaf, saya tidak bisa mengambil data saldo Anda saat ini.",
+                type: "text",
+              } );
+          }
+        }
+
+        // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer, Lend, LP)
+        const requiresInputBalance = ["swap", "stake", "transfer", "lend", "provide_liquidity"].includes(intent.action);
+        let coinInfo: any = null;
+        let amountInBaseUnits = BigInt(0);
+
+        if (requiresInputBalance) {
+          const searchToken = tokenIn;
+
+          const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
+          coinInfo = await findCoinInWallet(client as any, senderAddress, searchToken);
+
+          if (!coinInfo) {
+            return sendResultAndClose({
+                role: "assistant",
+                content: language === "en"
+                  ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
+                  : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
+                type: "text",
+              } );
+          }
+
+          const amountInRaw = intent.amountIn ?? 0;
+          amountInBaseUnits = BigInt(Math.floor(amountInRaw * (10 ** coinInfo.decimals)));
+
+          if (amountInBaseUnits > coinInfo.totalBalanceBase) {
+            const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
+            return sendResultAndClose({
+                role: "assistant",
+                content: language === "en"
+                  ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
+                  : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
+                type: "text",
+              } );
+          }
+        } else {
+          // For unstake, borrow, remove_liquidity, we don't strictly need input balance check
+          // Just set coinInfo to SUI as a default fallback for coinType parameter
+          coinInfo = { coinType: "0x2::sui::SUI", decimals: 9 };
+        }
+
+        const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
+
+        // 4.5 Auto Routing (Aggregator)
+        sendEvent("step", "routing");
+        const { buildPTB, findBestSwapRoute } = await import("@/lib/services/ptb-builder");
+        const bestRoute = await findBestSwapRoute(intent, amountInBaseUnits, coinInfo.coinType, client as any);
+
+        // 5. PTB Builder
+        sendEvent("step", "building");
+        const { transaction, steps, humanReadableSummary } = await buildPTB(
+          intent,
+          senderAddress,
+          coinInfo.coinType,
+          amountInBaseUnits,
+          client as any,
+          bestRoute
+        );
+
+        // Serialize transaction for frontend execution
+        // Using toJSON() BEFORE dryRunTransaction so we don't resolve and lock object versions and gas coins on the server
+        const txJSON = await transaction.toJSON({ client: client as any });
+        const base64TxBytes = Buffer.from(txJSON).toString("base64");
+
+        // 5. REAL Dry Run Simulation (on-chain via RPC)
+        sendEvent("step", "simulating");
+        const dryRunResult = await dryRunTransaction(transaction, senderAddress);
+        console.log("=== DEBUG: Dry Run Result ===", JSON.stringify(dryRunResult, null, 2));
+
+        // 6. Agent 2: Guardian AI Analysis
+        sendEvent("step", "guardian");
+        let guardianReport;
+        try {
+          guardianReport = await analyzeRisk(intent, dryRunResult, marketRate);
+          console.log("=== DEBUG: Guardian Report ===", JSON.stringify(guardianReport, null, 2));
+
+        } catch (error) {
+          console.error("Guardian AI error:", error);
+          // Fallback guardian report
+          guardianReport = {
+            riskLevel: 1 as const,
+            slippageBps: 150,
+            poolLiqUsd: 50000,
+            explanation: {
+              id: "Analisis risiko tidak tersedia saat ini.",
+              en: "Risk analysis is currently unavailable.",
+            },
+            recommendation: {
+              id: "Harap periksa kondisi pasar secara manual.",
+              en: "Please check market conditions manually.",
+            },
+          };
+        }
+
+        // 7. Walrus Integration (Store Intent & Report)
+        const { uploadToWalrus } = await import("@/lib/services/walrus");
+        const crypto = await import("crypto");
+        
+        const intentString = JSON.stringify(intent);
+        const reportString = JSON.stringify(guardianReport);
+
+        const intentHash = Array.from(crypto.createHash("sha256").update(intentString).digest());
+        const reportHash = Array.from(crypto.createHash("sha256").update(reportString).digest());
+
+        // Upload to Walrus in parallel
+        const [intentBlobId, reportBlobId] = await Promise.all([
+          uploadToWalrus(intentString),
+          uploadToWalrus(reportString)
+        ]);
+
+        // 8. Compose response
+        const transactionData: TransactionData = {
+          action: intent.action,
+          tokenIn: intent.tokenIn ?? "USDC",
+          tokenOut: intent.tokenOut ?? "SUI",
+          amountIn: intent.amountIn ?? 0,
+          estimatedOutput: dryRunResult.estimatedOutput,
+          steps,
+          gasEstimate: dryRunResult.gasUsed,
+          guardianReport,
+          txBytes: base64TxBytes,
+          kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID || process.env.NEXT_PUBLIC_KURA_LOGGER_PACKAGE_ID,
+          walrusData: (intentBlobId && reportBlobId) ? {
+            intentBlobId,
+            reportBlobId,
+            intentHash,
+            reportHash,
+            riskLevel: guardianReport.riskLevel,
+            slippageBps: guardianReport.slippageBps ?? 0,
+            poolLiqUsd: guardianReport.poolLiqUsd ?? 0,
+          } : undefined
+        };
+
+        const responseContent =
+          language === "en"
+            ? `Here are your transaction details for: ${humanReadableSummary}. Please review the Guardian risk report before executing.`
+            : `Berikut rincian transaksi Anda untuk: ${humanReadableSummary}. Harap tinjau laporan risiko Guardian sebelum mengeksekusi.`;
+
         return sendResultAndClose({
             role: "assistant",
-            content: language === "en"
-              ? `Your current ${tokenIn} balance is ${totalBalance.toFixed(4)} ${tokenIn}.`
-              : `Saldo ${tokenIn} Anda saat ini adalah ${totalBalance.toFixed(4)} ${tokenIn}.`,
-            type: "text",
+            content: responseContent,
+            type: "transaction",
+            transactionData,
           } );
-      } catch (e) {
-        console.error("Balance fetch error:", e);
-        return sendResultAndClose({
-            role: "assistant",
-            content: language === "en"
-              ? "Sorry, I couldn't fetch your balance right now."
-              : "Maaf, saya tidak bisa mengambil data saldo Anda saat ini.",
-            type: "text",
-          } );
+      } catch (error) {
+        console.error("API /chat error:", error);
+        sendEvent("error", { message: "Internal error" });
+        sendResultAndClose({
+          role: "assistant",
+          content: "Terjadi kesalahan internal. Silakan coba lagi dalam beberapa saat.",
+          type: "text",
+        });
+      } finally {
+        // Guarantee stream is always closed
+        try { controller.close(); } catch(e) { /* already closed */ }
       }
-    }
-
-    // 4. Dynamic Token Validation for Transactions (Swap, Stake, Transfer)
-    const { findCoinInWallet } = await import("@/lib/services/wallet-scanner");
-    const coinInfo = await findCoinInWallet(client as any, senderAddress, tokenIn);
-
-    if (!coinInfo) {
-      return sendResultAndClose({
-          role: "assistant",
-          content: language === "en"
-            ? `Transaction failed: You don't have any ${tokenIn} in your wallet.`
-            : `Transaksi gagal: Anda tidak memiliki ${tokenIn} di dompet Anda.`,
-          type: "text",
-        } );
-    }
-
-    const amountInRaw = intent.amountIn ?? 0;
-    const amountInBaseUnits = BigInt(Math.floor(amountInRaw * (10 ** coinInfo.decimals)));
-
-    if (amountInBaseUnits > coinInfo.totalBalanceBase) {
-      const maxAvailable = Number(coinInfo.totalBalanceBase) / (10 ** coinInfo.decimals);
-      return sendResultAndClose({
-          role: "assistant",
-          content: language === "en"
-            ? `Insufficient balance. You only have ${maxAvailable} ${tokenIn}.`
-            : `Saldo tidak mencukupi. Anda hanya memiliki ${maxAvailable} ${tokenIn}.`,
-          type: "text",
-        } );
-    }
-
-    const marketRate = getExchangeRate(tokenIn, tokenOut, prices);
-
-    // 4.5 Auto Routing (Aggregator)
-    sendEvent("step", "routing");
-    const { buildPTB, findBestSwapRoute } = await import("@/lib/services/ptb-builder");
-    const bestRoute = await findBestSwapRoute(intent, amountInBaseUnits, client as any);
-
-    // 5. PTB Builder
-    sendEvent("step", "building");
-    const { transaction, steps, humanReadableSummary } = await buildPTB(
-      intent,
-      senderAddress,
-      coinInfo.coinType,
-      amountInBaseUnits,
-      client as any,
-      bestRoute
-    );
-
-    // Serialize transaction for frontend execution
-    // Using toJSON() BEFORE dryRunTransaction so we don't resolve and lock object versions and gas coins on the server
-    const txJSON = await transaction.toJSON();
-    const base64TxBytes = Buffer.from(txJSON).toString("base64");
-
-    // 5. REAL Dry Run Simulation (on-chain via RPC)
-    sendEvent("step", "simulating");
-    const dryRunResult = await dryRunTransaction(transaction, senderAddress);
-
-    // 6. Agent 2: Guardian AI Analysis
-    sendEvent("step", "guardian");
-    let guardianReport;
-    try {
-      guardianReport = await analyzeRisk(intent, dryRunResult, marketRate);
-      console.log("=== DEBUG: Guardian Report ===", JSON.stringify(guardianReport, null, 2));
-
-    } catch (error) {
-      console.error("Guardian AI error:", error);
-      // Fallback guardian report
-      guardianReport = {
-        riskLevel: 1 as const,
-        slippageBps: 150,
-        poolLiqUsd: 50000,
-        explanation: {
-          id: "Analisis risiko tidak tersedia saat ini.",
-          en: "Risk analysis is currently unavailable.",
-        },
-        recommendation: {
-          id: "Harap periksa kondisi pasar secara manual.",
-          en: "Please check market conditions manually.",
-        },
-      };
-    }
-
-    // 7. Walrus Integration (Store Intent & Report)
-    const { uploadToWalrus } = await import("@/lib/services/walrus");
-    const crypto = await import("crypto");
-    
-    const intentString = JSON.stringify(intent);
-    const reportString = JSON.stringify(guardianReport);
-
-    const intentHash = Array.from(crypto.createHash("sha256").update(intentString).digest());
-    const reportHash = Array.from(crypto.createHash("sha256").update(reportString).digest());
-
-    // Upload to Walrus in parallel
-    const [intentBlobId, reportBlobId] = await Promise.all([
-      uploadToWalrus(intentString),
-      uploadToWalrus(reportString)
-    ]);
-
-    // 8. Compose response
-    const transactionData: TransactionData = {
-      action: intent.action,
-      tokenIn: intent.tokenIn ?? "USDC",
-      tokenOut: intent.tokenOut ?? "SUI",
-      amountIn: intent.amountIn ?? 0,
-      estimatedOutput: dryRunResult.estimatedOutput,
-      steps,
-      gasEstimate: dryRunResult.gasUsed,
-      guardianReport,
-      txBytes: base64TxBytes,
-      kuraLoggerPackageId: process.env.KURA_LOGGER_PACKAGE_ID || process.env.NEXT_PUBLIC_KURA_LOGGER_PACKAGE_ID,
-      walrusData: (intentBlobId && reportBlobId) ? {
-        intentBlobId,
-        reportBlobId,
-        intentHash,
-        reportHash,
-        riskLevel: guardianReport.riskLevel,
-        slippageBps: guardianReport.slippageBps ?? 0,
-        poolLiqUsd: guardianReport.poolLiqUsd ?? 0,
-      } : undefined
-    };
-
-    const responseContent =
-      language === "en"
-        ? `Here are your transaction details for: ${humanReadableSummary}. Please review the Guardian risk report before executing.`
-        : `Berikut rincian transaksi Anda untuk: ${humanReadableSummary}. Harap tinjau laporan risiko Guardian sebelum mengeksekusi.`;
-
-    return sendResultAndClose({
-        role: "assistant",
-        content: responseContent,
-        type: "transaction",
-        transactionData,
-      } );
-  } catch (error) {
-    console.error("API /chat error:", error);
-    sendResultAndClose({
-      role: "assistant",
-      content: "Terjadi kesalahan internal. Silakan coba lagi dalam beberapa saat.",
-      type: "text",
-    });
-  }
     }
   });
 
