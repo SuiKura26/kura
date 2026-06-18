@@ -100,7 +100,7 @@ Nama **"Kura"** bukan sekadar label produk — ia adalah manifesto filosofis yan
 | 5 | Guardian AI Layer | Agen AI kedua yang menganalisis hasil Dry Run, mendeteksi slippage, risiko likuiditas, dan menghasilkan laporan risiko dalam bahasa natural. Dilengkapi Dynamic Exemption untuk aksi non-swap. |
 | 6 | Human-Readable PTB Preview | Kartu transaksi yang menampilkan langkah-langkah eksekusi secara rinci dalam bahasa yang mudah dipahami, beserta peringatan risiko. |
 | 7 | Explicit Confirmation Flow | Alur konfirmasi dua langkah dengan tombol 'Saya Paham & Eksekusi' sebelum transaksi diteruskan ke wallet. |
-| 8 | Wallet Integration (dApp Kit) | Integrasi dengan Sui dApp Kit untuk koneksi wallet konvensional dan opsi zkLogin (Google Sign-In). |
+| 8 | Wallet Integration (dApp Kit) | Integrasi dengan Sui dApp Kit (`@mysten/dapp-kit`) untuk koneksi wallet extension (Sui Wallet, Martian, dll) dengan fitur auto-connect. |
 | 9 | On-Chain Log Storage (KuraLogger) | Smart contract Move di Sui Testnet yang menyimpan secara permanen dan tidak dapat diubah: GuardianReport, ConfirmationEvent, dan ExecutionLog setiap transaksi. |
 | 10 | Eksekusi On-Chain di Sui Testnet | Kemampuan mengirimkan PTB yang telah ditandatangani ke jaringan Sui Testnet untuk eksekusi aktual. |
 | 11 | Walrus Decentralized Storage | Penyimpanan JSON intent dan laporan Guardian ke jaringan Walrus untuk transparansi dan audit trail. |
@@ -246,7 +246,7 @@ Pengembangan Kura dipandu oleh tiga Epic utama yang merepresentasikan tiga tahap
   * **Sehingga** sistem atau AI tidak akan pernah bisa memindahkan dana saya secara sepihak, dan saya selalu menjadi pemegang kendali terakhir atas aset saya
 * **US-3.3 Alur Signing Wallet yang Aman**
   * **Sebagai** pengguna yang sudah memberikan konfirmasi eksplisit
-  * **Saya ingin** diarahkan ke ekstensi wallet saya (atau UI zkLogin) untuk proses penandatanganan kriptografi final hanya setelah semua peringatan sudah saya baca dan saya tekan tombol konfirmasi
+  * **Saya ingin** diarahkan ke ekstensi wallet saya untuk proses penandatanganan kriptografi final hanya setelah semua peringatan sudah saya baca dan saya tekan tombol konfirmasi
   * **Sehingga** keamanan kriptografi transaksi tetap terjaga sesuai standar industri blockchain
 * **US-3.4 Transaction Receipt & Explorer Link**
   * **Sebagai** pengguna yang baru saja menyelesaikan eksekusi transaksi
@@ -266,7 +266,7 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
                            LAPISAN FRONTEND (Client)
   +------------------+     +------------------+     +-----------------------+
   |     Chat UI      |     |   Transaction    |     |   Wallet Connection   |
-  | (React/Next.js)  |     |   Preview Card   |     | (Sui dApp Kit/zkLogin)|
+  | (React/Next.js)  |     |   Preview Card   |     | (Sui dApp Kit)        |
   +------------------+     +------------------+     +-----------------------+
 =============================================================================
           | HTTP POST              ^ Render Response        | signAndExecute
@@ -298,7 +298,7 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
 #### Lapisan 1: Frontend Layer (Antarmuka Pengguna)
 * **Chat Interface**: Komponen UI interaktif berbasis React/Next.js untuk menerima input teks bahasa natural. Dilengkapi dengan animasi loading berjenjang menggunakan Framer Motion ('Parsing...', 'Simulasi...', 'Mengecek Risiko...') untuk memberikan feedback visual yang informatif.
 * **Transaction Preview Card**: Kartu transaksi dinamis yang merender PTB Human-Readable, laporan risiko Guardian dengan indikator warna (merah/kuning/hijau), estimasi output, dan biaya gas yang diformat dengan jelas.
-* **Sui dApp Kit Integration**: Komponen koneksi wallet yang mendukung baik wallet extension konvensional maupun zkLogin (autentikasi melalui akun Google) menggunakan library resmi dari Mysten Labs.
+* **Sui dApp Kit Integration**: Komponen koneksi wallet menggunakan `@mysten/dapp-kit` yang mendukung wallet extension konvensional (Sui Wallet, Martian, dll) dengan fitur auto-connect.
 * **State Management**: Pengelolaan state yang komprehensif mencakup status loading, riwayat percakapan aktif, data transaksi pending, dan status konfirmasi pengguna.
 
 #### Lapisan 2: Backend & Agentic Layer (Otak Sistem)
@@ -317,7 +317,7 @@ Kura dibangun di atas arsitektur **multi-layered full-stack** yang memisahkan ta
 * **KuraLogger Contract (Entry Functions)**: Entry functions Move yang dapat dipanggil dari backend: `emit_guardian_report()` untuk menulis laporan risiko on-chain, `confirm_intent()` untuk mencatat konfirmasi eksplisit pengguna, dan `log_execution()` untuk mencatat digest transaksi final beserta statusnya.
 * **Sui Testnet RPC**: Endpoint komunikasi antara backend dengan jaringan Sui. Digunakan untuk: Dry Run (simulasi off-chain), pemanggilan entry function KuraLogger, dan pengambilan data state on-chain.
 * **dryRunTransactionBlock**: Fungsi RPC kritis untuk simulasi matematis PTB tanpa gas riil. Mengembalikan estimasi akurat: output token, gas yang digunakan, dan perubahan state.
-* **signAndExecuteTransactionBlock**: Fungsi eksekusi akhir yang hanya dipanggil setelah pengguna memberikan konfirmasi eksplisit. Memicu popup wallet/zkLogin untuk tanda tangan kriptografi.
+* **signAndExecuteTransactionBlock**: Fungsi eksekusi akhir yang hanya dipanggil setelah pengguna memberikan konfirmasi eksplisit. Memicu popup wallet extension untuk tanda tangan kriptografi.
 * **On-Chain DeFi Protocols**: Integrasi dengan protokol DeFi di ekosistem Sui:
   - **DeepBook V3** (`@mysten/deepbook-v3`): CLOB DEX native di Sui untuk swap dengan orderbook
   - **Cetus AMM** (`@cetusprotocol/cetus-sui-clmm-sdk`): Concentrated Liquidity Market Maker untuk provide/remove liquidity
@@ -432,7 +432,7 @@ module kura::logger {
 
 ### FASE 5: Eksekusi & Finalisasi (Client & Blockchain)
 * **Langkah 5.1 – Wallet Trigger**: Setelah pengguna menekan 'Saya Paham & Eksekusi', Frontend memanggil `signAndExecuteTransactionBlock` menggunakan hook dari Sui dApp Kit.
-* **Langkah 5.2 – Wallet/zkLogin Popup**: Ekstensi wallet pengguna (misalnya: Sui Wallet, Martian) atau popup zkLogin muncul untuk meminta persetujuan kriptografi akhir dari pengguna.
+* **Langkah 5.2 – Wallet Popup**: Ekstensi wallet pengguna (misalnya: Sui Wallet, Martian) muncul untuk meminta persetujuan kriptografi akhir dari pengguna.
 * **Langkah 5.3 – Cryptographic Signing**: Pengguna menandatangani transaksi menggunakan kunci privat mereka (secara lokal, kunci tidak pernah meninggalkan perangkat pengguna).
 * **Langkah 5.4 – On-Chain Execution**: PTB yang telah ditandatangani dilemparkan ke jaringan Sui Testnet dan dieksekusi secara on-chain sesuai dengan logika smart contract protokol yang dipanggil.
 * **Langkah 5.5 – Transaction Receipt**: Frontend menerima transaction digest (hash unik) dari jaringan. Sistem merender pesan sukses di layar chat beserta tautan langsung ke block explorer SuiVision agar pengguna dapat memverifikasi secara independen.
@@ -498,9 +498,7 @@ Guardian adalah lapisan kecerdasan kritis yang membedakan Kura dari solusi chatb
 
 | Metode Auth | Library/Provider | Keuntungan | Target Pengguna |
 |---|---|---|---|
-| Sui Wallet Extension | Sui dApp Kit (`@mysten/dapp-kit`) | Keamanan crypto-native penuh, kontrol kunci privat di tangan pengguna | DeFi enthusiast, pengguna crypto berpengalaman |
-| zkLogin (Google) | Mysten Labs zkLogin + OpenID Connect | Tidak perlu seed phrase, masuk dengan akun Google yang sudah ada | Pengguna baru, onboarding mudah |
-| zkLogin (Apple) | Mysten Labs zkLogin + Sign in with Apple | Privasi tinggi, familiar bagi pengguna iOS | Pengguna mobile, privacy-conscious |
+| Sui Wallet Extension | Sui dApp Kit (`@mysten/dapp-kit`) | Keamanan crypto-native penuh, kontrol kunci privat di tangan pengguna, auto-connect support | Semua pengguna DeFi yang memiliki wallet extension |
 
 ---
 
@@ -598,7 +596,7 @@ Guardian adalah lapisan kecerdasan kritis yang membedakan Kura dari solusi chatb
 | A-01 | Jaringan Sui Testnet beroperasi dengan uptime >= 99% selama periode pengembangan dan demo. | Simulasi dry run, pemanggilan KuraLogger, dan eksekusi akan gagal; perlu fallback ke mock data untuk demo. |
 | A-02 | Cetus Protocol dan DeepBook beroperasi normal di Testnet dan memiliki likuiditas yang memadai untuk demo. | Tidak bisa mendemonstrasikan swap yang realistis; perlu token/pool test khusus. |
 | A-03 | Google Gemini API (Flash tier) memiliki rate limit yang cukup untuk kebutuhan demo dan testing. | Perlu membatasi jumlah request atau beralih ke model alternatif yang kompatibel. |
-| A-04 | Pengguna memiliki wallet Sui (Sui Wallet extension) atau dapat menggunakan zkLogin untuk testing. | Perlu menyediakan wallet testing pre-configured untuk keperluan demo. |
+| A-04 | Pengguna memiliki wallet Sui (Sui Wallet extension atau wallet extension lain yang kompatibel). | Perlu menyediakan wallet testing pre-configured untuk keperluan demo. |
 | A-05 | Data harga dari price oracle API (Birdeye/CoinGecko) tersedia real-time untuk kalkulasi slippage yang akurat. | Guardian AI harus menggunakan data harga dari Dry Run saja, tanpa perbandingan market price. |
 | A-06 | KuraLogger Move module berhasil di-compile dan di-deploy ke Sui Testnet tanpa error; package_id tersedia untuk dipanggil oleh backend. | Fitur on-chain logging tidak dapat berjalan; perlu fallback logging sementara ke in-memory atau file log server. |
 | A-07 | Tim memiliki akses ke akun Vercel Pro atau setara untuk deployment dengan performance yang memadai. | Deployment mungkin mengalami cold start yang lebih lama pada tier free. |
@@ -640,7 +638,7 @@ Timeline ini dirancang untuk skenario hackathon/kompetisi dengan durasi pengemba
 | **Minggu 1** (Hari 1-7) | Foundation, Smart Contract & Backend Core | • Setup Next.js + Tailwind + Vercel<br>• Tulis & deploy KuraLogger Move module ke Sui Testnet<br>• Verifikasi package_id contract tersedia<br>• Endpoint /api/chat dasar<br>• Intent Parser Agent (Agent 1) fungsional | KuraLogger berhasil di-deploy; Agent 1 berhasil mem-parse 10 jenis intent umum dengan akurasi > 85% |
 | **Minggu 2** (Hari 8-14) | PTB Builder & Dry Run Integration | • PTB Builder Service untuk operasi swap<br>• Integrasi @mysten/sui.js untuk PTB & contract calls<br>• Koneksi ke Sui Testnet RPC<br>• dryRunTransactionBlock fungsional<br>• emit_guardian_report() berhasil dipanggil | Dry Run berhasil untuk 3+ operasi; GuardianReport objek muncul on-chain setelah analisis Guardian |
 | **Minggu 3** (Hari 15-21) | Guardian AI & Frontend UI | • Guardian Agent (Agent 2) fungsional<br>• Kalkulasi slippage dan risk level<br>• confirm_intent() dipanggil saat user setuju<br>• Chat Interface UI dengan animasi Framer Motion<br>• Transaction Preview Card dengan risk indicators | End-to-end flow dari input teks hingga Guardian report + on-chain log berhasil didemonstrasikan dalam satu sesi |
-| **Minggu 4** (Hari 22-28) | Wallet Integration, ExecutionLog & Demo | • Integrasi Sui dApp Kit (koneksi wallet)<br>• zkLogin integration<br>• signAndExecuteTransactionBlock flow<br>• log_execution() dipanggil setelah tx on-chain<br>• UI polishing & bug fixing<br>• Demo preparation & testing | Full end-to-end demo: input -> parse -> dry run -> Guardian report -> konfirmasi -> eksekusi -> ExecutionLog on-chain -> receipt di SuiVision |
+| **Minggu 4** (Hari 22-28) | Wallet Integration, ExecutionLog & Demo | • Integrasi Sui dApp Kit (koneksi wallet extension)<br>• signAndExecuteTransactionBlock flow<br>• log_execution() dipanggil setelah tx on-chain<br>• UI polishing & bug fixing<br>• Demo preparation & testing | Full end-to-end demo: input -> parse -> dry run -> Guardian report -> konfirmasi -> eksekusi -> ExecutionLog on-chain -> receipt di SuiVision |
 
 ### Definisi Done (Definition of Done)
 * Semua User Stories pada Epic yang dijanjikan telah diimplementasikan dan dapat didemonstrasikan secara langsung.
@@ -661,7 +659,7 @@ Timeline ini dirancang untuk skenario hackathon/kompetisi dengan durasi pengemba
 * **Guardian AI**: Agen AI kedua dalam sistem Kura yang bertugas menganalisis risiko transaksi berdasarkan hasil Dry Run dan kondisi pasar.
 * **Slippage**: Perbedaan antara harga yang diharapkan dan harga aktual yang terjadi saat transaksi dieksekusi, biasanya karena volatilitas atau likuiditas rendah.
 * **Stale Pool**: Liquidity pool yang tidak aktif atau memiliki likuiditas sangat rendah, sehingga berpotensi menyebabkan slippage ekstrem jika digunakan.
-* **zkLogin**: Metode autentikasi Sui yang menggunakan zero-knowledge proof untuk memungkinkan pengguna masuk dengan akun OAuth (Google, Apple) tanpa mengekspos data privat.
+* **zkLogin**: Metode autentikasi Sui yang menggunakan zero-knowledge proof untuk memungkinkan pengguna masuk dengan akun OAuth (Google, Apple) tanpa mengekspos data privat. *Catatan: Fitur ini belum diimplementasikan pada versi MVP saat ini; Kura saat ini menggunakan wallet extension konvensional via Sui dApp Kit.*
 * **Explicit Confirmation**: Prinsip desain Kura yang mewajibkan tindakan sadar dari pengguna (menekan tombol konfirmasi setelah membaca laporan risiko) sebelum setiap eksekusi transaksi.
 * **Human-Readable Preview**: Penyajian rincian transaksi dalam format bahasa natural yang mudah dipahami oleh pengguna awam, bukan dalam format teknis/hex.
 * **KuraLogger**: Move module (smart contract) yang di-deploy di Sui Testnet oleh tim Kura sebagai lapisan log on-chain yang permanen dan tidak dapat dimanipulasi.

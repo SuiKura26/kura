@@ -16,12 +16,17 @@ import {
   Lock,
   FileText,
   KeyRound,
-  ArrowRight
+  ArrowRight,
+  Globe,
+  Database,
+  Route,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
-  const chatAppUrl = process.env.NEXT_PUBLIC_CHAT_APP_URL || "https://kura-chat.vercel.app/";
+  const chatAppUrl =
+    process.env.NEXT_PUBLIC_CHAT_APP_URL || "https://kura-chat.vercel.app/";
   const [logoPositions, setLogoPositions] = useState<{
     sui: { top: string; left: string; size: string; rotate: string };
     walrus: { top: string; left: string; size: string; rotate: string };
@@ -37,7 +42,8 @@ export default function Home() {
 
   // Generate random positions on client mount to avoid SSR hydration issues
   useEffect(() => {
-    const randomInRange = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+    const randomInRange = (min: number, max: number) =>
+      Math.floor(Math.random() * (max - min + 1) + min);
     setLogoPositions({
       sui: {
         top: `${randomInRange(10, 45)}%`,
@@ -50,7 +56,7 @@ export default function Home() {
         left: `${randomInRange(60, 85)}%`,
         size: `${randomInRange(280, 420)}px`,
         rotate: `${randomInRange(-25, 25)}deg`,
-      }
+      },
     });
   }, []);
 
@@ -78,10 +84,36 @@ export default function Home() {
             </>
           </div>
           <nav className="hidden md:flex gap-8">
-            <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#features">Features</a>
-            <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#how-it-works">How It Works</a>
-            <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#security">Security</a>
-            <a className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors" href="#faq">FAQ</a>
+            <a
+              className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors"
+              href="#features"
+            >
+              Features
+            </a>
+            <a
+              className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors"
+              href="#how-it-works"
+            >
+              How It Works
+            </a>
+            <a
+              className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors"
+              href="#security"
+            >
+              Security
+            </a>
+            <a
+              className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors"
+              href="#ecosystem"
+            >
+              Ecosystem
+            </a>
+            <a
+              className="text-xs font-semibold text-text-muted hover:text-text-bright transition-colors"
+              href="#faq"
+            >
+              FAQ
+            </a>
           </nav>
           <div className="flex gap-4">
             <a
@@ -148,18 +180,28 @@ export default function Home() {
 
           <div className="relative z-30 max-w-4xl mx-auto mb-16">
             <h1 className="text-4xl md:text-6xl font-bold text-text-bright tracking-tight leading-none mb-6">
-              Speak your DeFi intent.<br />Execute with protection.
+              Speak your DeFi intent.
+              <br />
+              Execute with protection.
             </h1>
             <p className="text-text-muted max-w-2xl mx-auto text-base md:text-lg mb-10 leading-relaxed">
-              Kura converts natural language into DeFi transactions on Sui, performing accurate simulations and risk checks before asking for your explicit confirmation.
+              Kura converts natural language into DeFi transactions on Sui,
+              performing accurate simulations and risk checks before asking for
+              your explicit confirmation. Supports Bahasa Indonesia & English.
             </p>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <button className="px-8 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm">
+              <a
+                href={chatAppUrl}
+                className="px-8 py-4 bg-btn-primary-bg text-btn-primary-text text-xs font-bold glow-hover transition-all rounded-sm flex items-center justify-center"
+              >
                 Try Kura
-              </button>
-              <button className="px-8 py-4 border border-border-accent text-text-bright text-xs font-bold hover:bg-card-bg-accent transition-all rounded-sm">
+              </a>
+              <a
+                href="#how-it-works"
+                className="px-8 py-4 border border-border-accent text-text-bright text-xs font-bold hover:bg-card-bg-accent transition-all rounded-sm flex items-center justify-center"
+              >
                 View Workflow
-              </button>
+              </a>
             </div>
           </div>
 
@@ -169,7 +211,8 @@ export default function Home() {
             <div className="w-full md:w-2/5 border-r border-border-base flex flex-col p-6 text-left">
               <div className="flex-1 space-y-4 overflow-y-auto font-mono text-xs text-text-muted">
                 <div className="p-3 bg-card-bg-accent border border-border-accent rounded-sm opacity-60">
-                  Transfer 50 SUI to the lending pool and stake the remaining balance in Aftermath.
+                  Transfer 50 SUI to the lending pool and stake the remaining
+                  balance in Aftermath.
                 </div>
                 <div className="p-3 bg-text-bright/5 text-text-bright border border-text-bright/10 rounded-sm font-bold">
                   Parsing intent... Searching for optimal routes on Sui.
@@ -180,11 +223,15 @@ export default function Home() {
               </div>
               <div className="mt-4 pt-4 border-t border-border-base">
                 <div className="flex justify-between items-center opacity-40 mb-2">
-                  <span className="text-[10px] tracking-wider font-mono">INTENT INPUT</span>
+                  <span className="text-[10px] tracking-wider font-mono">
+                    INTENT INPUT
+                  </span>
                   <Terminal className="w-4 h-4" />
                 </div>
                 <div className="h-10 w-full bg-black border border-border-accent px-3 flex items-center rounded-sm">
-                  <span className="text-text-muted text-xs font-mono">Stake 100 SUI to...</span>
+                  <span className="text-text-muted text-xs font-mono">
+                    Stake 100 SUI to...
+                  </span>
                 </div>
               </div>
             </div>
@@ -194,8 +241,12 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-text-bright mb-1">Guardian Dry Run</h3>
-                    <p className="text-xs font-mono text-text-muted">Simulated on Sui Mainnet Block #492,012</p>
+                    <h3 className="text-xl font-bold text-text-bright mb-1">
+                      Guardian Dry Run
+                    </h3>
+                    <p className="text-xs font-mono text-text-muted">
+                      Simulated on Sui Mainnet Block #492,012
+                    </p>
                   </div>
                   <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono tracking-widest rounded-sm font-bold">
                     PASSED
@@ -206,16 +257,26 @@ export default function Home() {
                   <div className="p-4 border border-border-base bg-card-bg-base rounded-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <Shield className="w-4 h-4 text-text-bright" />
-                      <span className="text-xs font-mono font-bold text-text-bright tracking-wider">RISK REPORT</span>
+                      <span className="text-xs font-mono font-bold text-text-bright tracking-wider">
+                        RISK REPORT
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[10px] text-text-muted tracking-wider font-mono mb-1">CONTRACT VERIFIED</p>
-                        <p className="text-xs font-bold text-text-bright">YES</p>
+                        <p className="text-[10px] text-text-muted tracking-wider font-mono mb-1">
+                          CONTRACT VERIFIED
+                        </p>
+                        <p className="text-xs font-bold text-text-bright">
+                          YES
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-text-muted tracking-wider font-mono mb-1">SLIPPAGE PROTECTION</p>
-                        <p className="text-xs font-bold text-text-bright">0.5% MAX</p>
+                        <p className="text-[10px] text-text-muted tracking-wider font-mono mb-1">
+                          SLIPPAGE PROTECTION
+                        </p>
+                        <p className="text-xs font-bold text-text-bright">
+                          0.5% MAX
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -225,8 +286,12 @@ export default function Home() {
               <div className="mt-6">
                 <button className="w-full p-4 bg-btn-primary-bg text-btn-primary-text font-bold rounded-sm flex justify-between items-center hover:opacity-90 transition-opacity">
                   <div className="text-left">
-                    <p className="text-[9px] font-extrabold tracking-widest text-text-muted">CONFIRM TRANSACTION</p>
-                    <p className="text-xs font-bold">2 Transactions • 5.12 SUI Gas Est.</p>
+                    <p className="text-[9px] font-extrabold tracking-widest text-text-muted">
+                      CONFIRM TRANSACTION
+                    </p>
+                    <p className="text-xs font-bold">
+                      2 Transactions • 5.12 SUI Gas Est.
+                    </p>
                   </div>
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -243,49 +308,78 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 border border-border-base bg-card-bg-base hover:border-text-bright/20 transition-all rounded-sm">
               <Terminal className="w-8 h-8 text-text-muted mb-6" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">DeFi Complexity</h3>
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                DeFi Complexity
+              </h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Fragmented interfaces and complex protocols make simple actions require dozens of clicks and deep technical knowledge.
+                Fragmented interfaces and complex protocols make simple actions
+                require dozens of clicks and deep technical knowledge.
               </p>
             </div>
             <div className="p-8 border border-border-base bg-card-bg-base hover:border-text-bright/20 transition-all rounded-sm">
               <EyeOff className="w-8 h-8 text-text-muted mb-6" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Blind Signing Risks</h3>
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Blind Signing Risks
+              </h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Signing opaque hex data is a leap of faith. Most users have no idea what their wallet is actually approving until it's too late.
+                Signing opaque hex data is a leap of faith. Most users have no
+                idea what their wallet is actually approving until it's too
+                late.
               </p>
             </div>
             <div className="p-8 border border-border-base bg-card-bg-base hover:border-text-bright/20 transition-all rounded-sm">
               <ShieldAlert className="w-8 h-8 text-text-muted mb-6" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Lack of Guardian Layers</h3>
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Lack of Guardian Layers
+              </h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                There is no "undo" button or safety net between a user's intent and the irreversible execution of smart contracts.
+                There is no "undo" button or safety net between a user's intent
+                and the irreversible execution of smart contracts.
               </p>
             </div>
           </div>
         </section>
 
         {/* Solution Section */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto" id="features">
+        <section
+          className="py-24 px-6 md:px-16 max-w-7xl mx-auto"
+          id="features"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
             {/* The Guardian Shell */}
             <div className="lg:col-span-3 p-12 bg-card-bg-base border border-border-base flex flex-col justify-between min-h-[380px] rounded-sm hover:border-text-bright/10 transition-colors">
-              <span className="text-xs font-mono text-text-muted tracking-widest">PROTECTION LAYER</span>
+              <span className="text-xs font-mono text-text-muted tracking-widest">
+                PROTECTION LAYER
+              </span>
               <div>
-                <h2 className="text-3xl font-bold text-text-bright mb-4">The Guardian Shell.</h2>
+                <h2 className="text-3xl font-bold text-text-bright mb-4">
+                  The Guardian Shell.
+                </h2>
                 <p className="text-text-muted text-sm max-w-md leading-relaxed">
-                  Acting as your digital shell in a DeFi ecosystem filled with pitfalls. Through the Guardian AI Layer, Kura actively detects, intercepts, and warns you about real threats like high slippage, low liquidity (stale pools), and adverse execution. No transaction passes through without this protection.
+                  Acting as your digital shell in a DeFi ecosystem filled with
+                  pitfalls. Through the Guardian AI Layer, Kura actively
+                  detects, intercepts, and warns you about real threats like
+                  high slippage, low liquidity (stale pools), and adverse
+                  execution. No transaction passes through without this
+                  protection.
                 </p>
               </div>
             </div>
 
             {/* The Curator */}
             <div className="lg:col-span-2 p-12 bg-btn-primary-bg text-btn-primary-text flex flex-col justify-between min-h-[380px] rounded-sm hover:opacity-90 transition-all">
-              <span className="text-xs font-mono text-text-muted tracking-widest font-bold">INTENT MAPPING</span>
+              <span className="text-xs font-mono text-text-muted tracking-widest font-bold">
+                INTENT MAPPING
+              </span>
               <div>
-                <h2 className="text-3xl font-bold text-btn-primary-text mb-4">The Curator.</h2>
+                <h2 className="text-3xl font-bold text-btn-primary-text mb-4">
+                  The Curator.
+                </h2>
                 <p className="text-btn-primary-text/80 text-sm max-w-xs leading-relaxed font-medium">
-                  Your personal curator for financial transactions. Kura translates arbitrary everyday language into clean, structured Programmable Transaction Blocks (PTB), presented as a simple, human-readable preview before execution.
+                  Your personal curator for financial transactions. Kura
+                  translates arbitrary everyday language into clean, structured
+                  Programmable Transaction Blocks (PTB), presented as a simple,
+                  human-readable preview before execution.
                 </p>
               </div>
             </div>
@@ -293,52 +387,98 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-12 bg-card-bg-base border border-border-base rounded-sm hover:border-text-bright/10 transition-colors">
-              <h3 className="text-xl font-bold text-text-bright mb-4">High Accuracy (A-KURA-si).</h3>
+              <h3 className="text-xl font-bold text-text-bright mb-4">
+                High Accuracy (A-KURA-si).
+              </h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Embodying "Akurasi" (Accuracy) in its DNA. Powered by Sui's Dry Run capability, Kura doesn't guess transaction outcomes. It runs accurate off-chain mathematical simulations against real blockchain state so that the AI never hallucinates.
+                Embodying "Akurasi" (Accuracy) in its DNA. Powered by Sui's Dry
+                Run capability, Kura doesn't guess transaction outcomes. It runs
+                accurate off-chain mathematical simulations against real
+                blockchain state so that the AI never hallucinates.
               </p>
             </div>
             <div className="p-12 bg-card-bg-base border border-border-base rounded-sm hover:border-text-bright/10 transition-colors">
-              <h3 className="text-xl font-bold text-text-bright mb-4">Deliberate Execution.</h3>
+              <h3 className="text-xl font-bold text-text-bright mb-4">
+                Deliberate Execution.
+              </h3>
               <p className="text-text-muted text-sm leading-relaxed">
-                Never moving rashly, just like a turtle observing its surroundings before stepping. Kura enforces Explicit Confirmation: the AI never moves assets unilaterally. AI only drafts and analyzes, but final execution and signing remain 100% in your hands.
+                Never moving rashly, just like a turtle observing its
+                surroundings before stepping. Kura enforces Explicit
+                Confirmation: the AI never moves assets unilaterally. AI only
+                drafts and analyzes, but final execution and signing remain 100%
+                in your hands.
               </p>
             </div>
           </div>
         </section>
 
         {/* How It Works (Timeline) */}
-        <section className="py-24 bg-card-bg-base border-y border-border-base" id="how-it-works">
+        <section
+          className="py-24 bg-card-bg-base border-y border-border-base"
+          id="how-it-works"
+        >
           <div className="px-6 md:px-16 max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold text-text-bright mb-20 tracking-tight">The Execution Cycle.</h2>
+            <h2 className="text-3xl font-bold text-text-bright mb-20 tracking-tight">
+              The Execution Cycle.
+            </h2>
             <div className="relative">
               {/* Progress Line */}
               <div className="hidden md:block absolute top-[24px] left-[10%] right-[10%] h-[1px] bg-border-accent z-0"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8 relative z-10">
                 {[
-                  { step: "01", title: "Intent Input", desc: "Natural language request via chat or voice." },
-                  { step: "02", title: "AI Parsing", desc: "Large-model conversion to protocol logic." },
-                  { step: "03", title: "PTB Construction", desc: "Atomic transaction batching for efficiency." },
-                  { step: "04", title: "Guardian Analysis", desc: "Security audit and dry run simulation." },
-                  { step: "05", title: "Explicit Confirmation", desc: "Final human approval via zkLogin or wallet." }
+                  {
+                    step: "01",
+                    title: "Intent Input",
+                    desc: "Natural language request via chat or voice.",
+                  },
+                  {
+                    step: "02",
+                    title: "AI Parsing",
+                    desc: "Large-model conversion to protocol logic.",
+                  },
+                  {
+                    step: "03",
+                    title: "PTB Construction",
+                    desc: "Atomic transaction batching for efficiency.",
+                  },
+                  {
+                    step: "04",
+                    title: "Guardian Analysis",
+                    desc: "Security audit and dry run simulation.",
+                  },
+                  {
+                    step: "05",
+                    title: "Explicit Confirmation",
+                    desc: "Final human approval via wallet extension signing.",
+                  },
                 ].map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className="group cursor-pointer flex flex-col items-center text-center" 
+                  <div
+                    key={idx}
+                    className="group cursor-pointer flex flex-col items-center text-center"
                     onClick={() => setActiveStep(idx)}
                   >
-                    <div className={`w-12 h-12 border flex items-center justify-center font-mono text-xs mb-6 rounded-sm transition-all duration-300 relative z-10 ${activeStep === idx
-                        ? "bg-text-bright text-bg-base border-text-bright shadow-[0_0_15px_rgba(12,10,9,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)]"
-                        : "bg-card-bg-base text-text-muted border-border-accent group-hover:border-text-bright"
-                      }`}>
+                    <div
+                      className={`w-12 h-12 border flex items-center justify-center font-mono text-xs mb-6 rounded-sm transition-all duration-300 relative z-10 ${
+                        activeStep === idx
+                          ? "bg-text-bright text-bg-base border-text-bright shadow-[0_0_15px_rgba(12,10,9,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+                          : "bg-card-bg-base text-text-muted border-border-accent group-hover:border-text-bright"
+                      }`}
+                    >
                       {item.step}
                     </div>
-                    <h4 className={`text-xs font-mono font-bold mb-2 transition-colors duration-300 ${activeStep === idx ? "text-text-bright" : "text-text-muted"
-                      }`}>
+                    <h4
+                      className={`text-xs font-mono font-bold mb-2 transition-colors duration-300 ${
+                        activeStep === idx
+                          ? "text-text-bright"
+                          : "text-text-muted"
+                      }`}
+                    >
                       {item.title}
                     </h4>
-                    <p className="text-xs text-text-muted leading-relaxed">{item.desc}</p>
+                    <p className="text-xs text-text-muted leading-relaxed">
+                      {item.desc}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -353,16 +493,23 @@ export default function Home() {
             <div className="md:col-span-3 border border-border-base p-8 flex flex-col justify-between bg-card-bg-base min-h-[320px] rounded-sm hover:border-text-bright/10 transition-colors">
               <div>
                 <Terminal className="w-6 h-6 text-text-bright mb-4" />
-                <h3 className="text-xl font-bold text-text-bright mb-2">Natural Language Chat</h3>
+                <h3 className="text-xl font-bold text-text-bright mb-2">
+                  Natural Language Chat
+                </h3>
                 <p className="text-text-muted text-sm leading-relaxed mb-4">
-                  Type complex multi-protocol intents as easily as a text message. Kura supports 10 core DeFi actions: swap, stake, unstake, lend, borrow, provide liquidity, remove liquidity, transfer, check balance, and check price.
+                  Type complex multi-protocol intents as easily as a text
+                  message. Kura supports 10 core DeFi actions: swap, stake,
+                  unstake, lend, borrow, provide liquidity, remove liquidity,
+                  transfer, check balance, and check price.
                 </p>
                 <p className="text-[10px] font-mono text-text-muted">
                   INTEGRATIONS: Cetus AMM · DeepBook V3 · Scallop · Sui Native
                 </p>
               </div>
               <div className="mt-6 p-4 bg-card-bg-accent border border-border-base rounded-sm flex items-center">
-                <span className="font-mono text-xs text-text-muted">system: Waiting for user intent...</span>
+                <span className="font-mono text-xs text-text-muted">
+                  system: Waiting for user intent...
+                </span>
               </div>
             </div>
 
@@ -370,9 +517,12 @@ export default function Home() {
             <div className="md:col-span-3 border border-border-base p-8 flex flex-col justify-between bg-card-bg-base min-h-[320px] rounded-sm hover:border-text-bright/10 transition-colors">
               <div>
                 <Zap className="w-6 h-6 text-text-bright mb-4" />
-                <h3 className="text-xl font-bold text-text-bright mb-2">Dry Run Simulation</h3>
+                <h3 className="text-xl font-bold text-text-bright mb-2">
+                  Dry Run Simulation
+                </h3>
                 <p className="text-text-muted text-sm leading-relaxed">
-                  See exactly how your balance changes before committing to the chain.
+                  See exactly how your balance changes before committing to the
+                  chain.
                 </p>
               </div>
               <div className="mt-6">
@@ -390,9 +540,12 @@ export default function Home() {
             <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors flex flex-col justify-between">
               <div>
                 <Shield className="w-6 h-6 text-text-bright mb-4" />
-                <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Guardian Risk Report</h3>
+                <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                  Guardian Risk Report
+                </h3>
                 <p className="text-text-muted text-xs leading-relaxed mb-4">
-                  AI-driven auditing for every transaction block prior to signing.
+                  AI-driven auditing for every transaction block prior to
+                  signing.
                 </p>
                 <div className="space-y-2 text-[10px] font-mono text-text-muted">
                   <div className="flex justify-between items-center border-b border-border-base pb-1">
@@ -418,25 +571,70 @@ export default function Home() {
             {/* Human-readable PTB */}
             <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
               <FileText className="w-6 h-6 text-text-bright mb-4" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Human-readable PTB</h3>
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Human-readable PTB
+              </h3>
               <p className="text-text-muted text-xs leading-relaxed">
-                No more hex parsing. Read what your transaction actually executes.
+                No more hex parsing. Read what your transaction actually
+                executes.
               </p>
             </div>
 
-            {/* zkLogin Onboarding */}
+            {/* Wallet Extension */}
             <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
               <KeyRound className="w-6 h-6 text-text-bright mb-4" />
-              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">zkLogin Onboarding</h3>
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Wallet Extension
+              </h3>
               <p className="text-text-muted text-xs leading-relaxed">
-                Connect using Google, Facebook, or Apple without managing recovery seeds.
+                Connect seamlessly using Sui Wallet, Martian, or any compatible
+                wallet extension with auto-connect support.
+              </p>
+            </div>
+
+            {/* Walrus Decentralized Storage */}
+            <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
+              <Database className="w-6 h-6 text-text-bright mb-4" />
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Walrus Storage
+              </h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                Every intent and Guardian report is stored as a permanent blob on
+                Walrus decentralized storage for an immutable audit trail.
+              </p>
+            </div>
+
+            {/* Smart Routing */}
+            <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
+              <Route className="w-6 h-6 text-text-bright mb-4" />
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Smart Routing
+              </h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                Auto-routes swaps via DeepBook V3 mainnet pools for the best
+                prices with Cetus AMM as fallback.
+              </p>
+            </div>
+
+            {/* Bilingual Support */}
+            <div className="md:col-span-2 border border-border-base p-8 bg-card-bg-base rounded-sm hover:border-text-bright/10 transition-colors">
+              <Globe className="w-6 h-6 text-text-bright mb-4" />
+              <h3 className="text-xs font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Bilingual
+              </h3>
+              <p className="text-text-muted text-xs leading-relaxed">
+                Full support for Bahasa Indonesia and English. Type your DeFi
+                intent in the language you're most comfortable with.
               </p>
             </div>
           </div>
         </section>
 
         {/* Security Section */}
-        <section className="py-24 bg-bg-base text-foreground-base" id="security">
+        <section
+          className="py-24 bg-bg-base text-foreground-base"
+          id="security"
+        >
           <div className="px-6 md:px-16 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
             <div className="flex-1">
               <h2 className="text-3xl md:text-4xl font-bold text-text-bright mb-8 tracking-tight">
@@ -444,15 +642,32 @@ export default function Home() {
               </h2>
               <ul className="space-y-6">
                 {[
-                  { title: "Local Key Management", desc: "Your private keys never leave your device. Kura acts only as a secure interface generator." },
-                  { title: "100% Active Signing", desc: "Passive monitoring is not enough. Kura requires your explicit signature for every state change." },
-                  { title: "On-chain Logs", desc: "All Kura interactions are logged via KuraLogger on Sui for transparent, immutable audit trails." }
+                  {
+                    title: "Local Key Management",
+                    desc: "Your private keys never leave your device. Kura acts only as a secure interface generator.",
+                  },
+                  {
+                    title: "100% Active Signing",
+                    desc: "Passive monitoring is not enough. Kura requires your explicit signature for every state change.",
+                  },
+                  {
+                    title: "On-chain Logs",
+                    desc: "All Kura interactions are logged via KuraLogger on Sui for transparent, immutable audit trails.",
+                  },
+                  {
+                    title: "Privacy-First Sessions",
+                    desc: "Chat sessions auto-clear on wallet disconnect. No conversation data is stored on our servers.",
+                  },
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-start gap-4">
                     <CheckCircle2 className="w-5 h-5 text-text-bright mt-1 shrink-0" />
                     <div>
-                      <h4 className="text-sm font-bold text-text-bright font-mono tracking-wide uppercase">{item.title}</h4>
-                      <p className="text-text-muted text-sm leading-relaxed mt-1">{item.desc}</p>
+                      <h4 className="text-sm font-bold text-text-bright font-mono tracking-wide uppercase">
+                        {item.title}
+                      </h4>
+                      <p className="text-text-muted text-sm leading-relaxed mt-1">
+                        {item.desc}
+                      </p>
                     </div>
                   </li>
                 ))}
@@ -463,10 +678,78 @@ export default function Home() {
             <div className="flex-1 w-full max-w-md aspect-square border border-border-base p-12 flex items-center justify-center relative overflow-hidden bg-card-bg-base rounded-sm">
               <div className="absolute inset-0 opacity-5 flex flex-wrap gap-1 p-2">
                 {Array.from({ length: 64 }).map((_, i) => (
-                  <div key={i} className="w-8 h-8 border border-border-accent"></div>
+                  <div
+                    key={i}
+                    className="w-8 h-8 border border-border-accent"
+                  ></div>
                 ))}
               </div>
               <Shield className="w-32 h-32 text-text-bright relative z-10" />
+            </div>
+          </div>
+        </section>
+
+        {/* The Ecosystem Section */}
+        <section
+          className="py-24 bg-card-bg-base border-y border-border-base"
+          id="ecosystem"
+        >
+          <div className="px-6 md:px-16 max-w-7xl mx-auto">
+            <h2 className="text-3xl font-bold text-text-bright mb-16 text-center tracking-tight">
+              The Kura Ecosystem.
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="p-10 border border-border-base bg-bg-base rounded-sm hover:border-text-bright/20 transition-all">
+                <div className="w-12 h-12 mb-6 bg-btn-primary-bg/10 flex items-center justify-center rounded-sm">
+                  <Terminal className="w-6 h-6 text-btn-primary-text" />
+                </div>
+                <h3 className="text-xl font-bold text-text-bright mb-2">
+                  Chat
+                </h3>
+                <p className="text-xs font-mono text-text-muted mb-4 uppercase tracking-wider">
+                  The Core Intent Engine
+                </p>
+                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                  The main conversational application built with Next.js 16. It
+                  houses the dual-agent AI system (Intent Parser & Guardian AI),
+                  the PTB Builder service, and seamless wallet integrations via
+                  Sui dApp Kit. This is where users interact with the
+                  blockchain using natural language.
+                </p>
+                <a
+                  href={chatAppUrl}
+                  className="text-xs font-bold text-btn-primary-text hover:underline flex items-center gap-1"
+                >
+                  Launch App <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+
+              <div className="p-10 border border-border-base bg-bg-base rounded-sm hover:border-text-bright/20 transition-all">
+                <div className="w-12 h-12 mb-6 bg-emerald-500/10 flex items-center justify-center rounded-sm">
+                  <Code className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-bold text-text-bright mb-2">
+                  Smart Contracts
+                </h3>
+                <p className="text-xs font-mono text-text-muted mb-4 uppercase tracking-wider">
+                  The KuraLogger Move Module
+                </p>
+                <p className="text-text-muted text-sm leading-relaxed mb-6">
+                  Our custom Sui Move smart contracts deployed on Mainnet. It
+                  acts as an immutable on-chain ledger that permanently stores
+                  Guardian risk reports, explicit user confirmations, and
+                  execution logs to ensure full transparency and an unalterable
+                  audit trail.
+                </p>
+                <a
+                  href="https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  View on Suiscan <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -481,16 +764,21 @@ export default function Home() {
               <div className="w-16 h-16 mx-auto mb-6 bg-text-bright/5 flex items-center justify-center rounded-full">
                 <Users className="w-6 h-6 text-text-bright" />
               </div>
-              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">Crypto Beginners</h4>
+              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">
+                Crypto Beginners
+              </h4>
               <p className="text-text-muted text-xs leading-relaxed">
-                Fearless entry into DeFi. No technical jargon, just execute your intent.
+                Fearless entry into DeFi. No technical jargon, just execute your
+                intent.
               </p>
             </div>
             <div className="text-center p-8 bg-card-bg-base border border-border-base rounded-sm">
               <div className="w-16 h-16 mx-auto mb-6 bg-text-bright/5 flex items-center justify-center rounded-full">
                 <TrendingUp className="w-6 h-6 text-text-bright" />
               </div>
-              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">Intermediate Users</h4>
+              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">
+                Intermediate Users
+              </h4>
               <p className="text-text-muted text-xs leading-relaxed">
                 Faster execution routing and real-time security scanning.
               </p>
@@ -499,7 +787,9 @@ export default function Home() {
               <div className="w-16 h-16 mx-auto mb-6 bg-text-bright/5 flex items-center justify-center rounded-full">
                 <Code className="w-6 h-6 text-text-bright" />
               </div>
-              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">Sui Developers</h4>
+              <h4 className="text-xs font-mono font-bold mb-4 uppercase tracking-wider text-text-bright">
+                Sui Developers
+              </h4>
               <p className="text-text-muted text-xs leading-relaxed">
                 Integrate Kura into your dApp to simplify the user journey.
               </p>
@@ -515,11 +805,18 @@ export default function Home() {
                 { metric: "90%", label: "PARSE SUCCESS" },
                 { metric: "100%", label: "GUARDIAN CHECK" },
                 { metric: "<10s", label: "LATENCY" },
-                { metric: "100%", label: "CONFIRM RATE" }
+                { metric: "100%", label: "CONFIRM RATE" },
               ].map((item, idx) => (
-                <div key={idx} className="p-6 border border-border-base text-center rounded-sm bg-bg-base/40">
-                  <p className="text-3xl md:text-4xl font-bold text-text-bright mb-2">{item.metric}</p>
-                  <p className="text-[10px] font-mono text-text-muted tracking-widest">{item.label}</p>
+                <div
+                  key={idx}
+                  className="p-6 border border-border-base text-center rounded-sm bg-bg-base/40"
+                >
+                  <p className="text-3xl md:text-4xl font-bold text-text-bright mb-2">
+                    {item.metric}
+                  </p>
+                  <p className="text-[10px] font-mono text-text-muted tracking-widest">
+                    {item.label}
+                  </p>
                 </div>
               ))}
             </div>
@@ -527,7 +824,10 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-24 px-6 md:px-16 max-w-4xl mx-auto border-t border-border-base" id="faq">
+        <section
+          className="py-24 px-6 md:px-16 max-w-4xl mx-auto border-t border-border-base"
+          id="faq"
+        >
           <h2 className="text-3xl font-bold text-text-bright mb-12 text-center tracking-tight">
             Frequently Asked Questions
           </h2>
@@ -535,24 +835,39 @@ export default function Home() {
             {[
               {
                 q: "What protocols does Kura integrate with?",
-                a: "Kura is integrated with Cetus AMM for liquidity provision, DeepBook V3 for limit orderbook swaps, Scallop for lending/borrowing, and Sui Native Staking for staking operations."
+                a: "Kura is integrated with Cetus AMM for liquidity provision, DeepBook V3 for limit orderbook swaps, Scallop for lending/borrowing, and Sui Native Staking for staking operations.",
               },
               {
                 q: "What actions can the Intent Parser process?",
-                a: "Kura supports 10 distinct DeFi actions: swap, stake, unstake, lend, borrow, provide liquidity, remove liquidity, transfer, check balance, and check price."
+                a: "Kura supports 10 distinct DeFi actions: swap, stake, unstake, lend, borrow, provide liquidity, remove liquidity, transfer, check balance, and check price.",
               },
               {
                 q: "Is Kura non-custodial?",
-                a: "Yes, Kura is 100% non-custodial. Kura operates under the philosophy of Deliberate Execution, meaning the AI only acts as an assistant to draft and analyze transactions, while the final cryptographic execution requires your manual confirmation and signature."
+                a: "Yes, Kura is 100% non-custodial. Kura operates under the philosophy of Deliberate Execution, meaning the AI only acts as an assistant to draft and analyze transactions, while the final cryptographic execution requires your manual confirmation and signature.",
               },
               {
                 q: "How does the Guardian AI evaluate risk?",
-                a: "For every intent, the Guardian AI performs an off-chain dry-run simulation of the generated Programmable Transaction Block (PTB) on the Sui network. It extracts parameters like slippage and pool depth, compares them with real-time oracle data, and maps them to four risk tiers (Low, Medium, High, Critical) to protect you from bad executions."
-              }
+                a: "For every intent, the Guardian AI performs an off-chain dry-run simulation of the generated Programmable Transaction Block (PTB) on the Sui network. It extracts parameters like slippage and pool depth, compares them with real-time oracle data, and maps them to four risk tiers (Low, Medium, High, Critical) to protect you from bad executions.",
+              },
+              {
+                q: "How is the audit trail stored?",
+                a: "Every intent JSON and Guardian report is stored as a permanent blob on Walrus decentralized storage. Additionally, risk reports (GuardianReport), user confirmations (ConfirmationEvent), and execution results (ExecutionLog) are written on-chain via the KuraLogger Move contract on Sui Mainnet — creating a dual-layer, immutable audit trail.",
+              },
+              {
+                q: "What languages does Kura support?",
+                a: "Kura fully supports both Bahasa Indonesia and English. You can type your DeFi intent in either language, and the AI will parse and process it accurately.",
+              },
             ].map((faq, idx) => (
-              <div key={idx} className="p-6 border border-border-base bg-card-bg-base rounded-sm">
-                <h4 className="text-sm font-bold text-text-bright font-mono mb-2">{faq.q}</h4>
-                <p className="text-xs text-text-muted leading-relaxed">{faq.a}</p>
+              <div
+                key={idx}
+                className="p-6 border border-border-base bg-card-bg-base rounded-sm"
+              >
+                <h4 className="text-sm font-bold text-text-bright font-mono mb-2">
+                  {faq.q}
+                </h4>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  {faq.a}
+                </p>
               </div>
             ))}
           </div>
@@ -571,9 +886,14 @@ export default function Home() {
               >
                 Launch Kura <ArrowRight className="w-4 h-4" />
               </a>
-              <button className="px-12 py-4 border border-border-accent text-text-bright text-xs font-bold hover:bg-card-bg-accent transition-all rounded-sm">
+              <a
+                href="https://github.com/SuiKura26/kura/blob/main/README.md#architecture"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-12 py-4 border border-border-accent text-text-bright text-xs font-bold hover:bg-card-bg-accent transition-all rounded-sm flex items-center justify-center"
+              >
                 Read Architecture
-              </button>
+              </a>
             </div>
           </div>
         </section>
@@ -602,7 +922,8 @@ export default function Home() {
               </>
             </div>
             <p className="max-w-sm leading-relaxed">
-              Built for safer DeFi interactions on Sui. Secured by machine intelligence, confirmed by you.
+              Built for safer DeFi interactions on Sui. Secured by machine
+              intelligence, confirmed by you.
             </p>
             <div className="pt-4 text-[10px] font-mono opacity-50">
               © 2026 KURA AI. SECURED BY SUI.
@@ -610,26 +931,104 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-3 gap-6">
             <div>
-              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Product</h5>
+              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Product
+              </h5>
               <ul className="space-y-3">
-                <li><a className="hover:text-text-bright transition-colors" href="#">Documentation</a></li>
-                <li><a className="hover:text-text-bright transition-colors" href="#">Security Audit</a></li>
-                <li><a className="hover:text-text-bright transition-colors" href="#">Architecture</a></li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://github.com/SuiKura26/kura/blob/main/docs/PRD.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Documentation
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://suiscan.xyz/mainnet/object/0xff9158af19df647bd9f6ab7a6b239d97465dfcfe2341ac2f6a87fff0861c1a20"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Security Audit
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://github.com/SuiKura26/kura/blob/main/README.md#architecture"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Architecture
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
-              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Company</h5>
+              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Company
+              </h5>
               <ul className="space-y-3">
-                <li><a className="hover:text-text-bright transition-colors" href="#">Terms of Service</a></li>
-                <li><a className="hover:text-text-bright transition-colors" href="#">Privacy Policy</a></li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://github.com/SuiKura26/kura/blob/main/docs/PRD.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://github.com/SuiKura26/kura/blob/main/docs/PRD.md#security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Privacy Policy
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
-              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">Social</h5>
+              <h5 className="font-mono font-bold text-text-bright mb-4 uppercase tracking-wider">
+                Social
+              </h5>
               <ul className="space-y-3">
-                <li><a className="hover:text-text-bright transition-colors" href="#">Discord</a></li>
-                <li><a className="hover:text-text-bright transition-colors" href="#">Twitter</a></li>
-                <li><a className="hover:text-text-bright transition-colors" href="#">Github</a></li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://discord.gg/sui"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Discord
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://x.com/SuiNetwork"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Twitter
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className="hover:text-text-bright transition-colors"
+                    href="https://github.com/SuiKura26/kura"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Github
+                  </a>
+                </li>
               </ul>
             </div>
           </div>

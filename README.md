@@ -142,7 +142,7 @@ flowchart LR
 ┌──────────────────┐  ┌──────────────────┐  ┌───────────────────────────────┐
 │    Chat UI       │  │  Transaction     │  │   Wallet Connection           │
 │  (React/Next.js) │  │  Preview Card    │  │   (@mysten/dapp-kit)          │
-│  Tailwind v4     │  │  GuardianReport  │  │   Extension / zkLogin         │
+│  Tailwind v4     │  │  GuardianReport  │  │   Extension Wallet            │
 └──────────────────┘  └──────────────────┘  └───────────────────────────────┘
 ═══════════════════════════════════════════════════════════════════════════════
             HTTP POST (SSE)                Render Response     signAndExecute
@@ -252,7 +252,7 @@ User Intent  ──→  GuardianReport Object (risk_level, slippage, blob refs)
 |------------|---------|
 | **Sui Blockchain** | Layer-1 blockchain (**Mainnet**) |
 | **@mysten/sui v2** | Sui TypeScript SDK |
-| **@mysten/dapp-kit** | Wallet integration (extension + zkLogin) |
+| **@mysten/dapp-kit** | Wallet integration (extension with auto-connect) |
 | **@mysten/deepbook-v3** | DeepBook V3 CLOB DEX (mainnet pools & coins) |
 | **@scallop-io/sui-scallop-sdk** | Lending & borrowing protocol |
 | **Cetus AMM** | Concentrated liquidity AMM |
