@@ -7,6 +7,7 @@ import { Language } from "@/hooks/useChat";
 import { ChatSession } from "@/types/chat";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { FaucetButton } from "@/components/chat/FaucetButton";
 
 interface SidebarProps {
   language: Language;
@@ -145,6 +146,12 @@ export function Sidebar({ language, toggleLanguage, onNewChat, sessions, activeS
 
           {/* Bottom Actions */}
           <div className="pt-4 border-t space-y-2 mt-auto">
+
+            {/* Faucet — Above Wallet */}
+            <div className="w-full flex justify-center mb-2">
+              <FaucetButton variant="compact" />
+            </div>
+
             {/* Wallet Connect */}
             <div className="w-full flex justify-center mb-2">
               <ConnectButton 
