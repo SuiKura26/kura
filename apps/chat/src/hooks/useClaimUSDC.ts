@@ -87,7 +87,12 @@ export function useClaimUSDC() {
       setTimeout(() => setClaimStatus((s) => (s === "success" ? "idle" : s)), 3000);
     } catch (err) {
       setClaimStatus("error");
-      setError(err instanceof Error ? err.message : "Faucet failed");
+      const msg = err instanceof Error ? err.message : "Faucet failed";
+      if (msg.includes("not configured") || msg.includes("FAUCET_SECRET_KEY")) {
+        setError("Need SUI for gas. Get SUI from Sui Discord faucet first.");
+      } else {
+        setError(msg);
+      }
       setTimeout(() => setClaimStatus("idle"), 2500);
     }
   }, [address, queryClient]);
