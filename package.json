@@ -10,9 +10,12 @@
     "dev": "pnpm --parallel -r dev",
     "dev:landing-page": "pnpm --filter @kura/landing-page dev",
     "dev:chat": "pnpm --filter @kura/chat dev",
+    "dev:video": "pnpm --filter @kura/video dev",
     "build": "pnpm -r build",
     "build:landing-page": "pnpm --filter @kura/landing-page build",
     "build:chat": "pnpm --filter @kura/chat build",
+    "build:video": "pnpm --filter @kura/video build",
+    "render:video": "pnpm --filter @kura/video render",
     "start:landing-page": "pnpm --filter @kura/landing-page start",
     "preview:chat": "pnpm --filter @kura/chat preview",
     "lint": "pnpm -r lint"

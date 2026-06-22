@@ -94,7 +94,7 @@
 | • "Lend 50 USDC di Scallop" → Guardian | |
 | • "Pinjam 20 USDC" → Guardian | |
 | • Bilingual: "Tukar 0.5 SUI ke USDC" | *English and Bahasa Indonesia. Built for everyone.* |
-| Tampilkan: **chat.kura.ai** | *Kura is open source. Live on Sui Testnet. Try it now.* |
+| Tampilkan: **Try Kura** | *Kura is open source. Live on Sui. Try it now.* |
 | Logo Kura + tagline fade in. | *Don't Blind Sign. Kura Sign.* |
 
 ---
@@ -158,8 +158,8 @@ Swap. Stake. Lend. Borrow. Transfer.
 Ten DeFi actions. One interface.
 English and Bahasa Indonesia. Built for everyone.
 
-Kura is open source. Live on Sui Testnet.
-Try it now at chat.kura.ai.
+Kura is open source. Live on Sui.
+Try it now.
 
 Don't Blind Sign. Kura Sign.
 ```
